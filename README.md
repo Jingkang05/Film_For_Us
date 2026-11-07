@@ -37,7 +37,7 @@ Press the burgundy floral wax seal, or focus it and press Enter / Space. The pap
 - `public/envelope.css`: cotton colors (`--cotton-light`, `--cotton`, `--cotton-shade`, `--fold-shade`), wax size (`--seal-size`), responsive extraction distance (`--letter-lift`), photographic fibre texture, edge shading, botanical placement, and focus / hover treatment. The four optimized WebP assets are in `public/assets/envelope-*.webp`; their generation prompts and provenance are recorded in `previews/envelope/ASSETS.md`.
 - `src/darkroom.ts`: preserves album text and existing scenes, and matches the emerging paper's measured position to the reading scene. Repeated activation is locked; pending animations are cancelled on scene changes and page exit. Reduced motion keeps 120 ms of seal feedback and opens the letter without spatial movement.
 
-After configuration changes, run `pnpm build` and reload. Progress is saved only after reaching the letter scene, so reloading midway returns to a sealed envelope. The controller tests cover repeated activation, sequencing, page exit, cancellation, and changing reduced-motion preferences.
+After configuration changes, run `pnpm build` and reload. Every new visit or reload starts at the sealed envelope. Reading progress stays in memory for the current visit; old saved scene progress is ignored. Browser back/forward-cache restores also start a new visit. The controller tests cover repeated activation, sequencing, page exit, cancellation, and changing reduced-motion preferences.
 
 ## Instant prints
 
@@ -67,7 +67,7 @@ pnpm check
 pnpm test
 ```
 
-The integration test uses an isolated database and 18 sample uploads. It covers EXIF rotation, size variants, duplicate retries, stale revisions, private media access, failed publication, restart persistence, and replacement of the public snapshot. The browser stores guest and draft-preview progress separately.
+The integration test uses an isolated database and 18 sample uploads. It covers EXIF rotation, size variants, duplicate retries, stale revisions, private media access, failed publication, restart persistence, and replacement of the public snapshot. Guest and draft-preview reading progress is held only in memory. Language and shutter-sound preferences remain saved.
 
 ## Visual reference
 

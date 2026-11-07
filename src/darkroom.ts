@@ -27,12 +27,15 @@ const heartBadge = (selected: boolean) =>
   `<span class="frame-heart" aria-hidden="true"${selected ? "" : " hidden"}>${icon("heart")}</span>`;
 
 export function mountDarkroom(album: Album, preview: boolean) {
-  const key = `roll-for-us:${preview ? "preview" : "guest"}:${album.id}:1`;
   const photos = new Map(album.rolls.flatMap((roll) => roll.photos.map((photo) => [photo.id, photo] as const)));
   const revealedPhotos = new Set<string>();
   const filmAudio = createFilmAudio();
   const musicControl = mountSoundtrack(app);
-  let state = restore();
+  let state = fresh();
+  // A back/forward-cache restore must also begin a new reading visit.
+  window.addEventListener("pageshow", event => {
+    if (event.persisted) window.location.reload();
+  });
   let development: Developing = "waiting";
   let timer: number | undefined;
   let justHung = "";
@@ -50,32 +53,6 @@ export function mountDarkroom(album: Album, preview: boolean) {
   let preloadedInstant: HTMLImageElement | undefined;
   let envelopeOpening: ReturnType<typeof createEnvelopeOpening> | undefined;
   let finishEnvelopeEntry: (() => void) | undefined;
-
-  function restore(): Progress {
-    try {
-      const saved = JSON.parse(localStorage.getItem(key) ?? "null");
-      if (saved?.version !== 1 || !scenes.includes(saved.scene)) return fresh();
-      const valid = (value: unknown): string[] => Array.isArray(value)
-        ? [...new Set(value.filter((id): id is string => typeof id === "string" && photos.has(id)))] : [];
-      const queue = valid(saved.queue);
-      const hung = valid(saved.hung).filter((id) => queue.includes(id));
-      const selected = valid(saved.selected);
-      let scene: Scene = saved.scene;
-      const roll = album.rolls.find((item) => item.id === saved.roll && item.photos.length)?.id ?? "";
-      if (scene === "film" && roll && roll === album.rolls[2]?.id) scene = "instant";
-      if ((scene === "film" && !roll) || (scene === "tray" && !selected.length && !queue.length)
-        || (scene === "instant" && (!roll || roll !== album.rolls[2]?.id))
-        || (scene === "line" && !hung.length)) scene = "table";
-      if (scene === "tray" && queue.length && hung.length === queue.length) scene = "line";
-      return { version: 1, scene, roll, selected, queue, hung };
-    } catch {
-      return fresh();
-    }
-  }
-
-  function save() {
-    try { localStorage.setItem(key, JSON.stringify(state)); } catch { /* Browsing still works in memory. */ }
-  }
 
   function switchScene(scene: Scene) {
     if (state.scene === "film" && scene !== "film") filmAudio.stop();
@@ -625,7 +602,6 @@ export function mountDarkroom(album: Album, preview: boolean) {
         app.querySelector<HTMLButtonElement>(".roll--instant")?.focus({ preventScroll: true });
       });
       app.querySelector(".instant-bar")!.append(musicControl);
-      save();
       return;
     }
     if (scene === "table" && album.rolls[2]?.photos.length && !preloadedInstant) {
@@ -685,7 +661,6 @@ export function mountDarkroom(album: Album, preview: boolean) {
     const feed = app.querySelector<HTMLElement>(".film-feed");
     if (feed) attachFilm(feed);
     if (viewer) showViewerFrame(roll);
-    save();
   }
 
   function attachFilm(feed: HTMLElement) {
