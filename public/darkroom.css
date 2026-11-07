@@ -196,29 +196,59 @@ h1[tabindex="-1"]:focus { outline: none; }
   padding: 1rem clamp(1.75rem, 7vw, 6rem);
 }
 .letter-set--open {
-  grid-template-columns: .95fr 1fr;
-  max-width: 1150px;
+  --letter-width: min(520px, 42vw, calc((100svh - 210px) / 1.35));
+  grid-template-columns: minmax(0, .85fr) minmax(0, 1fr);
+  max-width: 1140px;
   width: 100%;
   margin-inline: auto;
-  gap: clamp(.8rem, 4vw, 3.5rem);
+  padding: 2rem;
+  gap: clamp(2rem, 5vw, 4.5rem);
 }
 .letter-paper {
   position: relative;
-  width: min(100%, 23rem);
-  min-height: min(520px, 66svh);
-  padding: clamp(1.5rem, 3vw, 2.25rem);
+  width: var(--letter-width);
+  aspect-ratio: 1 / 1.3;
+  min-height: 0;
+  padding: calc(var(--letter-width) * .09) calc(var(--letter-width) * .1);
   justify-self: center;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: clamp(.9rem, 3vw, 2rem);
+  gap: 1.5rem;
+  overflow: hidden;
+  color-scheme: light;
   color: var(--ink);
-  background:
-    linear-gradient(112deg, #fff4d27a, #c5a77738),
-    var(--grain) var(--paper);
-  background-blend-mode: normal, soft-light;
+  background: var(--grain) var(--paper);
   box-shadow: .8rem 1.05rem 2rem #130905c4, inset 0 0 1.2rem #7e563124;
   transform: rotate(2deg);
+}
+.letter-reading {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #9f665266 transparent;
+  padding: 0 .5rem .5rem .25rem;
+  scroll-padding-block: 1rem;
+}
+.letter-reading:focus-visible { outline: 1px solid #9f6652; outline-offset: 5px; }
+.letter-paper .letter-copy {
+  text-align: start;
+  font-size: 18px;
+  line-height: 1.8;
+}
+.letter-paper .letter-copy[data-cjk] {
+  font-size: 21px;
+  line-height: 1.85;
+  letter-spacing: .01em;
+}
+.letter-reading .paper-action {
+  display: flex;
+  width: fit-content;
+  margin-top: 2rem;
+  margin-bottom: .5rem;
+  font-family: var(--hand);
+  min-height: 44px;
 }
 .letter-index {
   display: flex;
@@ -1134,9 +1164,18 @@ dialog::backdrop { background: #140705ce; }
   .darkroom { grid-template-rows: auto minmax(415px, 1fr) auto; }
   .scene-bar { padding-top: max(1.65rem, env(safe-area-inset-top)); gap: .5rem; font-size: .65rem; letter-spacing: .045em; }
   .scene-foot { min-height: 6.5rem; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
-  .letter-set--open { display: block; position: relative; padding: 2rem 1.5rem 2.6rem; max-width: 28rem; }
-  .letter-set--open .envelope { position: absolute; bottom: 2.5rem; left: .9rem; width: 65%; }
-  .letter-paper { width: min(100%, 21rem); margin-inline: auto; min-height: min(29rem, 65svh); }
+  .letter-set--open {
+    --letter-width: min(calc(100vw - 48px), 420px);
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+    padding: 3.5rem 1.5rem 2rem;
+    max-width: none;
+  }
+  .letter-set--open .envelope { position: relative; width: min(62%, 240px); align-self: flex-start; margin-left: 1rem; }
+  .letter-paper { flex: none; margin-inline: auto; gap: 1rem; }
+  .letter-paper .letter-copy { font-size: 16px; }
+  .letter-paper .letter-copy[data-cjk] { font-size: 19px; line-height: 1.8; }
   .table-heading { top: 2%; }
   .rolls { height: clamp(360px, 58vh, 510px); margin-top: 4.5rem; }
   .roll { width: clamp(148px, 45%, 230px); }

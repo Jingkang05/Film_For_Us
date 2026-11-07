@@ -133,8 +133,10 @@ export function mountDarkroom(album: Album, preview: boolean) {
       ${envelopeObject(open, copy)}
       ${open ? `<article class="letter-paper">
         <span class="letter-index">ROLL FOR US <span>1 / 1</span></span>
-        ${copy}
-        <button type="button" class="paper-action" data-action="table">${ui("enterDarkroom")} ${icon("right")}</button>
+        <div class="letter-reading" tabindex="0">
+          ${copy}
+          <button type="button" class="paper-action" data-action="table">${ui("enterDarkroom")} ${icon("right")}</button>
+        </div>
       </article>` : ""}
     </div>`;
   }

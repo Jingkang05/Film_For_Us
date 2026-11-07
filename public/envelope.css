@@ -260,7 +260,8 @@
 .darkroom--unsealing .envelope-insert { will-change: transform; }
 .letter-set--open .envelope {
   align-self: end;
-  transform: translateY(15%) rotate(-10deg);
+  width: min(100%, 420px);
+  transform: translateY(4%) rotate(-10deg);
   filter: brightness(.78);
 }
 .letter-set--open .seal-assembly, .letter-set--open .botanical-paper-shadow { visibility: hidden; }
@@ -270,6 +271,7 @@
 }
 
 @media (max-width: 700px) {
+  .letter-set--open .envelope { width: min(62%, 240px); }
   .envelope { --letter-lift: -62%; --seal-size: clamp(72px, 21cqw, 84px); perspective: 850px; }
   .darkroom--envelope .letter-set { padding-inline: clamp(1.8rem, 8vw, 3.5rem); }
   .darkroom--envelope .stage { padding-block: 4.25rem 1.5rem; }
