@@ -1,0 +1,102 @@
+.owner, .owner-login {
+  width: min(100%, 920px);
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 3.25rem);
+}
+.owner-login { max-width: 420px; padding-top: min(20vh, 8rem); }
+.owner-login form, .owner-section { display: grid; gap: 1rem; }
+.owner-login form .action { justify-self: start; }
+.owner h1, .owner-login h1, .owner h2 { font-family: var(--serif); font-weight: 400; }
+.owner h1, .owner-login h1 { margin: .1rem 0 .9rem; font-size: clamp(2rem, 5vw, 3.15rem); }
+.owner h2 { font-size: 1.45rem; margin: 0; }
+.owner-brand { font: 400 1.2rem var(--serif); color: var(--muted); text-decoration: none; }
+.owner-heading, .owner-toolbar > div, .roll-fields, .owner-photo-actions {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: .6rem 1rem;
+  flex-wrap: wrap;
+}
+.owner-toolbar { padding: .75rem 0 1rem; border-block: 1px solid #674236; }
+.owner-toolbar > div { justify-content: flex-start; }
+.owner-toolbar .text-button { padding-inline: .3rem; }
+.owner-toolbar p { margin: 0 0 .55rem; }
+.owner-toolbar #owner-status { margin-top: .55rem; }
+.owner-toolbar .share-field { margin-top: 1rem; }
+.share-field label { flex: 1 1 14rem; }
+.owner-feedback { min-height: 1.35em; color: #dbba91; font-size: .9rem; }
+.owner-feedback--error { color: #ffa18d; }
+.owner-section { padding: 1.6rem 0; border-bottom: 1px solid #674236; }
+.owner label, .owner-login label { display: grid; gap: .35rem; font-size: .87rem; }
+.owner input, .owner textarea, .owner select, .owner-login input {
+  width: 100%;
+  min-height: 44px;
+  min-width: 0;
+  border: 1px solid #8a5f4c;
+  border-radius: 1px;
+  padding: .5rem .65rem;
+  background: #20120e;
+  color: var(--light);
+  font-size: 1rem;
+}
+.owner input[type=color] { width: 64px; padding: .25rem; }
+.owner textarea { resize: vertical; }
+.owner textarea[name=letter] { font-family: var(--reading); }
+.owner input[name=title][data-cjk], .owner input[name=roll-name][data-cjk],
+.owner textarea[name=letter][data-cjk], .owner textarea[name=note][data-cjk] {
+  font-size: 1.2rem;
+  line-height: 1.75;
+  letter-spacing: var(--zh-tracking-body);
+  caret-color: #f2c298;
+}
+.owner .action--publish { color: #2b1812; background: #e5c39c; }
+.owner .action--publish:hover { background: #f1d4b0; }
+.owner :disabled, .owner-login :disabled { opacity: .57; }
+.owner-roll { margin: 0; border: 1px solid #765142; min-width: 0; padding: 1rem; }
+.owner-roll legend { padding: 0 .5rem; font-weight: 650; }
+.owner-roll legend small, .owner-empty { color: var(--muted); font-size: .82rem; font-weight: 400; }
+.owner-empty, .upload-list { margin: 0; }
+.roll-fields label:first-child { flex: 1 1 12rem; }
+.upload-module { scroll-margin-top: 1rem; }
+.upload-module select { max-width: 21rem; }
+.owner .upload-drop {
+  position: relative;
+  justify-items: center;
+  align-content: center;
+  min-height: 8rem;
+  padding: 1rem;
+  text-align: center;
+  border: 1px dashed #ad7962;
+  background: #281511;
+}
+.upload-drop strong { display: inline-flex; align-items: center; gap: .55rem; font-size: 1rem; }
+.upload-drop > span { color: var(--muted); }
+.owner .upload-drop:hover, .owner .upload-drop.is-dragging { background: #46251d; border-color: #e0aa8c; }
+.owner .upload-drop:focus-within { outline: 2px solid #f2c298; outline-offset: 4px; }
+.owner .upload-drop input { position: absolute; inset: 0; height: 100%; opacity: 0; cursor: pointer; }
+.upload-module > .action { justify-self: start; }
+.upload-list { padding: 0; list-style: none; }
+.upload-list:empty { display: none; }
+.upload-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) auto;
+  gap: .3rem .8rem;
+  align-items: center;
+  padding: .45rem 0;
+  border-top: 1px solid #674236;
+  overflow-wrap: anywhere;
+  font-size: .875rem;
+}
+.upload-name { font-weight: 600; }
+.upload-list li[data-state=failed] > span:nth-child(2) { color: #ffa18d; }
+.upload-row-actions { display: flex; gap: .7rem; }
+.upload-row-actions:empty { display: none; }
+.owner-photo { display: grid; grid-template-columns: minmax(80px, 128px) minmax(0, 1fr); gap: .65rem 1rem; padding: 1rem 0 0; margin-top: 1rem; border-top: 1px solid #674236; }
+.owner-photo img { width: 100%; aspect-ratio: 1; object-fit: cover; border: 4px solid #d9bc96; }
+.owner-photo-fields { display: grid; gap: .6rem; }
+.owner-photo-actions { justify-content: flex-start; }
+@media (max-width: 480px) {
+  .upload-list li { grid-template-columns: minmax(0, 1fr); }
+  .owner-photo { grid-template-columns: 1fr; }
+  .owner-photo img { width: 110px; }
+}

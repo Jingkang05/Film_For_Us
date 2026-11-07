@@ -1,0 +1,298 @@
+/* Golden light, cotton paper and photographic botanicals; the room keeps its original layout. */
+.darkroom--envelope {
+  --room-light: radial-gradient(ellipse at 35% 33%, #99714542, transparent 49%),
+    radial-gradient(ellipse at 48% 43%, #663922, #361b12 54%, #140805 94%);
+}
+.envelope {
+  --cotton-light: #f5e8d1;
+  --cotton: #e9d9bd;
+  --cotton-shade: #c3ab8b;
+  --fold-shade: #a58d72;
+  --seal-size: clamp(72px, 18.5cqw, 96px);
+  --letter-lift: -66%;
+  --paper-fibre: url("/assets/envelope-cotton.webp");
+  --botanical-alpha: url("/assets/envelope-botanicals.webp");
+  position: relative;
+  display: block;
+  container-type: inline-size;
+  width: min(100%, 520px);
+  aspect-ratio: 1.65;
+  padding: 0;
+  color: var(--ink);
+  perspective: 1100px;
+  transform: rotate(-8deg);
+  border-radius: 1px 2px 1px 2px;
+  background: var(--cotton-shade);
+  box-shadow: 0 1px 0 var(--cotton-light), 1px 3px 0 var(--fold-shade), 2px 5px 3px #160b0899,
+    8px 17px 22px #120704aa, 20px 36px 48px #10060370;
+}
+.envelope-back, .envelope-side, .envelope-pocket, .envelope-flap-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background-blend-mode: multiply, normal;
+  background-size: 100% 100%, 100% 100%;
+}
+.envelope-back {
+  background-image: linear-gradient(145deg, #fff9e500, #c3ab8b69), var(--paper-fibre);
+  box-shadow: inset 0 1px #fff4dc, inset 1px 0 #e9d9bda6, inset -1px -1px #a58d7280;
+  clip-path: polygon(.1% .1%, 17% .25%, 39% 0, 66% .18%, 85% 0, 99.9% .2%, 100% 26%, 99.8% 59%, 100% 81%, 99.85% 99.8%, 72% 100%, 50% 99.8%, 28% 100%, .1% 99.8%, 0 71%, .12% 35%);
+}
+.envelope-mouth {
+  position: absolute;
+  inset: 2px 2px 10%;
+  background: linear-gradient(180deg, #756047, #ac9576 18%, #d8c8ac 60%, var(--cotton-shade));
+  box-shadow: inset 0 3px 7px #48362460;
+  clip-path: polygon(0 0, 100% 0, 100% 54%, 50% 80%, 0 54%);
+}
+.envelope-letter-slot {
+  position: absolute;
+  z-index: 1;
+  inset: -140% 0 1px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.envelope-insert {
+  position: absolute;
+  top: 64%;
+  left: 8%;
+  width: 84%;
+  height: 54%;
+  overflow: hidden;
+  padding: 7.5%;
+  color: #51382b;
+  background: linear-gradient(112deg, #fff5df00, #c3ab8b20), var(--paper-fibre) center / cover var(--cotton);
+  background-blend-mode: multiply, normal;
+  border-radius: 1px;
+  box-shadow: 0 1px 1px #f3e6ca, 2px 5px 14px #2c1a135c;
+}
+.envelope-insert .letter-index { margin-bottom: 1.5rem; font-size: .59rem; }
+.envelope-insert .letter-copy { font-size: .88rem; line-height: 1.75; }
+.envelope-insert .letter-copy[data-cjk] { font-size: 1.05rem; line-height: 1.85; }
+.envelope-side { z-index: 2; pointer-events: none; }
+.envelope-side--left {
+  background-image: linear-gradient(45deg, #d8c6ab19, #a58d723c), var(--paper-fibre);
+  clip-path: polygon(0 0, 53% 64%, 0 100%);
+}
+.envelope-side--right {
+  background-image: linear-gradient(145deg, #f5e8d100, #b39b7c4f), var(--paper-fibre);
+  clip-path: polygon(100% 0, 100% 100%, 47% 64%);
+}
+.envelope-pocket {
+  z-index: 3;
+  clip-path: polygon(0 100%, 0 98%, 46% 50%, 50% 48%, 54% 50%, 100% 98%, 100% 100%);
+  background-image: linear-gradient(127deg, #fff2d000, #e2c48817 32%, #a58d7233), var(--paper-fibre);
+  box-shadow: inset 0 -1px #fff1d5c2, inset -1px 0 #a58d725c;
+  pointer-events: none;
+}
+.envelope-fold-edges {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.envelope-writing { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
+.envelope-brand {
+  position: absolute;
+  inset: 78% 0 auto;
+  text-align: center;
+  font: 500 clamp(1.85rem, 9.8cqw, 2.9rem)/1.05 var(--serif);
+  letter-spacing: -.025em;
+  color: #49382b;
+  mix-blend-mode: multiply;
+  text-shadow: .35px .45px #5b382126;
+}
+.envelope-hinge {
+  position: absolute;
+  z-index: 5;
+  inset: 0 0 auto;
+  height: 59%;
+  transform-origin: 50% 0;
+  transform-style: preserve-3d;
+}
+.envelope-flap-shadow {
+  position: absolute;
+  z-index: 4;
+  inset: 0 0 auto;
+  height: 59%;
+  background: #7a6042;
+  clip-path: polygon(0 0, 100% 0, 54% 96%, 51% 99%, 49% 99%, 46% 96%);
+  transform: translate(1px, 2px);
+  filter: blur(.8px);
+  opacity: 0;
+  transition: opacity 350ms ease;
+  pointer-events: none;
+}
+.envelope[data-envelope-state="sealed"] .envelope-flap-shadow,
+.envelope[data-envelope-state="sealReleasing"] .envelope-flap-shadow { opacity: .32; }
+.envelope-flap-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  clip-path: polygon(0 0, 100% 0, 54% 96%, 51% 99%, 49% 99%, 46% 96%);
+}
+.envelope-flap-face--front {
+  background-image: linear-gradient(135deg, #fff6e700, #ffe1a10d 29%, #a58d722b), var(--paper-fibre);
+  background-size: 100% 100%, 100% 169.5%;
+  box-shadow: inset 0 1px var(--cotton-light);
+}
+.envelope-flap-face--front::after {
+  position: absolute;
+  content: "";
+  inset: 0;
+  background: linear-gradient(125deg, transparent 5%, #ffe6a833 22%, transparent 44%, #80613b0d 90%);
+}
+.envelope-flap-face--back {
+  transform: rotateY(180deg) translateZ(.5px);
+  background-image: linear-gradient(180deg, #a58d724f, #c3ab8b20 50%, #f5e8d100), var(--paper-fibre);
+  box-shadow: inset 0 1px 2px #a58d7266;
+}
+.envelope-crease {
+  position: absolute;
+  z-index: 6;
+  inset: 0 1px auto;
+  height: 2px;
+  background: linear-gradient(90deg, #fff4df73, #a58d7260 45%, #f5e8d170);
+  pointer-events: none;
+}
+.stamp {
+  position: absolute;
+  top: 8%;
+  right: 12%;
+  padding: .1rem .4rem;
+  border: 1.5px solid #80483b91;
+  border-radius: 1px;
+  color: #7b4539;
+  opacity: .7;
+  font: 400 clamp(.58rem, 2.7cqw, .79rem)/1.5 var(--mono);
+  letter-spacing: .08em;
+  transform: rotate(-9deg);
+  mix-blend-mode: multiply;
+}
+.seal-assembly, .botanical-paper-shadow {
+  position: absolute;
+  top: calc(97% - var(--seal-size) / 2);
+  left: calc(50% - var(--seal-size) / 2);
+  width: var(--seal-size);
+  height: var(--seal-size);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.seal-assembly { transform: translateZ(3px); transform-style: preserve-3d; }
+.botanical-paper-shadow { transform: translateZ(.5px); pointer-events: none; }
+.envelope-botanicals, .botanical-cast {
+  position: absolute;
+  left: -15%;
+  bottom: 30%;
+  width: 190%;
+  height: 190%;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.envelope-botanicals { object-fit: contain; transform: translateZ(1px); }
+.botanical-cast {
+  background: #4e3a21;
+  mask: var(--botanical-alpha) center / 100% 100% no-repeat;
+  -webkit-mask: var(--botanical-alpha) center / 100% 100% no-repeat;
+  transform-origin: 32% 93%;
+}
+.botanical-cast--near {
+  clip-path: inset(62% 0 0);
+  transform: translate(2px, 4px) skewX(-4deg);
+  opacity: .38;
+  filter: blur(.5px);
+}
+.botanical-cast--far {
+  clip-path: inset(0 0 30%);
+  transform: translate(8px, 12px) skewX(-9deg) scaleY(.95);
+  opacity: .28;
+  filter: blur(1.1px);
+}
+.wax-seal {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 64px;
+  min-height: 64px;
+  padding: 0;
+  border: 0;
+  border-radius: 47% 51% 46% 49%;
+  background: transparent;
+  appearance: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transform: translateZ(2px);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: transform 240ms ease, filter 240ms ease;
+  filter: drop-shadow(1px 2px .6px #32151aa6) drop-shadow(4px 7px 3px #4d302b61);
+}
+.wax-surface {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+@media (hover: hover) {
+  .wax-seal:hover:enabled {
+    transform: translate3d(0, -1px, 3px) rotate(-.5deg);
+    filter: brightness(1.035) drop-shadow(1px 2px .6px #32151aa6) drop-shadow(4px 8px 3px #4d302b61);
+  }
+}
+.wax-seal:focus-visible { outline: 2px solid #713d35; outline-offset: 5px; }
+.wax-seal:active:enabled { transform: translate3d(0, 1px, 1px) scale(.98); }
+.wax-seal:disabled { cursor: default; }
+.envelope[data-envelope-state="letterEmerging"] .envelope-hinge,
+.envelope[data-envelope-state="transitioning"] .envelope-hinge,
+.envelope[data-envelope-state="completed"] .envelope-hinge { z-index: 0; }
+.envelope[data-envelope-state="letterEmerging"] .envelope-hinge,
+.envelope[data-envelope-state="transitioning"] .envelope-hinge,
+.envelope[data-envelope-state="completed"] .envelope-hinge { transform: rotateX(-176deg); }
+.darkroom--envelope .stage-hint { color: #d59b90; transition: opacity 200ms ease; }
+.darkroom--unsealing .envelope { will-change: transform; }
+.darkroom--unsealing .envelope-hinge { will-change: transform; }
+.darkroom--unsealing .envelope-insert { will-change: transform; }
+.letter-set--open .envelope {
+  align-self: end;
+  transform: translateY(15%) rotate(-10deg);
+  filter: brightness(.78);
+}
+.letter-set--open .seal-assembly, .letter-set--open .botanical-paper-shadow { visibility: hidden; }
+.darkroom--letter .letter-paper {
+  background: linear-gradient(112deg, #fff8e52b, #c3ab8b14), url("/assets/envelope-cotton.webp") center / cover var(--paper);
+  background-blend-mode: multiply, normal;
+}
+
+@media (max-width: 700px) {
+  .envelope { --letter-lift: -62%; --seal-size: clamp(72px, 21cqw, 84px); perspective: 850px; }
+  .darkroom--envelope .letter-set { padding-inline: clamp(1.8rem, 8vw, 3.5rem); }
+  .darkroom--envelope .stage { padding-block: 4.25rem 1.5rem; }
+  .envelope-brand { font-size: clamp(1.6rem, 9.8cqw, 2.9rem); }
+  .envelope-insert { padding: 7%; }
+  .envelope-insert .letter-copy[data-cjk] { font-size: .9rem; }
+  .envelope-insert .letter-index { font-size: .48rem; margin-bottom: 1rem; }
+}
+@media (max-width: 365px) {
+  .envelope { --seal-size: 66px; }
+  .envelope-brand { inset-block-start: 80%; font-size: 1.7rem; }
+}
+@media (max-height: 600px) and (min-width: 701px) {
+  .darkroom--envelope { grid-template-rows: auto minmax(0, 1fr) auto; height: 100svh; }
+  .darkroom--envelope .scene-bar { padding-top: 1rem; }
+  .darkroom--envelope .scene-foot { min-height: 5rem; padding-bottom: 1rem; }
+  .darkroom--envelope .letter-set { padding-block: 3rem 0; }
+  .darkroom--envelope .envelope { width: min(100%, clamp(240px, 65svh, 370px)); --letter-lift: -54%; }
+  .darkroom--envelope .envelope { --seal-size: 64px; }
+  .darkroom--envelope .envelope-brand { font-size: 9.8cqw; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wax-seal { transition: none; }
+  .wax-seal:hover:enabled, .wax-seal:active:enabled { transform: translateZ(2px); }
+  .darkroom--envelope .stage-hint { transition: opacity 120ms ease; }
+}

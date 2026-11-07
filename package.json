@@ -1,0 +1,23 @@
+{
+  "name": "roll-for-us",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit && node --check server/index.mjs && node --check server/album.mjs && node --check server/blob-album.mjs && node --check 'api/[...route].mjs'",
+    "dev": "tsc && node --env-file-if-exists=.env server/index.mjs",
+    "start": "node --env-file-if-exists=.env server/index.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.8.2",
+    "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

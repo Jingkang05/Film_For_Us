@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm build",
+  "outputDirectory": "public",
+  "regions": ["sin1"],
+  "rewrites": [
+    { "source": "/api/:route*", "destination": "/api/[...route]" },
+    { "source": "/demo", "destination": "/index.html" },
+    { "source": "/manage", "destination": "/index.html" },
+    { "source": "/manage/preview", "destination": "/index.html" },
+    { "source": "/a/:shareId([a-zA-Z0-9_-]{16})", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; connect-src 'self' https://vercel.com/api/blob/; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+        }
+      ]
+    }
+  ]
+}

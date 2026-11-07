@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>两种笔迹 · 中文字体预览</title>
+  <style>
+    @font-face { font-family: KleinNight; src: url('./klein-night.woff2') format('woff2'); font-display: swap; }
+    @font-face { font-family: WinterPoem; src: url('./winter-poem.woff2') format('woff2'); font-display: swap; }
+    :root { color-scheme: dark; --paper: #ede4cf; --ink: #462b21; --scale: 1; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #260e0d; color: #f2dfc0; font: 14px/1.6 system-ui, sans-serif; }
+    .page { max-width: 1400px; margin: auto; padding: 32px 36px 40px; }
+    header { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
+    h1 { font-size: 22px; font-weight: 450; margin: 0 0 4px; letter-spacing: .06em; }
+    header p { margin: 0; color: #d0ad93; font-size: 12px; }
+    .controls { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #e1c4a9; }
+    input { accent-color: #d0ad93; }
+    input[type=range] { width: 90px; }
+    input:focus-visible { outline: 2px solid #f2c298; outline-offset: 4px; }
+    main { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+    .candidate { min-width: 0; --face: KleinNight; --comma-lift: -.34em; --period-lift: -.31em; }
+    .candidate.winter { --face: WinterPoem; --comma-lift: -.38em; --period-lift: -.35em; }
+    h2 { font: 450 16px/1.4 system-ui, sans-serif; margin: 0 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    h2 small { font-size: 10px; color: #d0ad93; font-weight: 400; }
+    .hand { font-family: var(--face), cursive; font-weight: 400; font-synthesis: none; }
+    .title-scene { min-height: 146px; padding: 20px 22px; background: radial-gradient(ellipse at 40% 75%, #68291d, #39120e 70%); display: flex; align-items: center; }
+    .title { margin: 0; font-size: calc(clamp(28px, 3.4vw, 45px) * var(--scale)); line-height: 1.55; letter-spacing: .015em; overflow-wrap: anywhere; }
+    .paper { padding: 24px 26px; color: var(--ink); background: linear-gradient(112deg, #fff4d22e, #c5a77715), var(--paper); }
+    .letter { margin: 0; font-size: calc(24px * var(--scale)); line-height: 1.9; letter-spacing: .025em; }
+    .letter + .letter { margin-top: 10px; }
+    .lower { display: grid; grid-template-columns: 162px 1fr; gap: 24px; align-items: center; margin-top: 24px; }
+    figure { margin: 0; padding: 9px 9px 12px; background: #f3ead9; color: #573b2d; box-shadow: 4px 7px 14px #48291e2b; }
+    figure img { display: block; width: 100%; aspect-ratio: 1.1; object-fit: cover; }
+    figcaption { font-size: calc(20px * var(--scale)); line-height: 1.5; margin-top: 8px; }
+    .details { min-width: 0; }
+    .details .hand { font-size: calc(21px * var(--scale)); line-height: 1.8; margin: 0; overflow-wrap: anywhere; }
+    .details .label { color: #72523f; font-size: 10px; margin: 0 0 5px; }
+    .details .label:not(:first-child) { margin-top: 12px; }
+    .punct { position: relative; }
+    body.centered .comma { top: var(--comma-lift); }
+    body.centered .period { top: var(--period-lift); }
+    .availability { margin: 12px 0 0; color: #d0ad93; font-size: 11px; }
+    footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid #c496733d; color: #d0ad93; font-size: 11px; }
+    footer p { margin: 4px 0; }
+    .loading { color: #f2c298; }
+    @media (max-width: 850px) { .page { padding: 24px 22px; } header { align-items: start; flex-direction: column; gap: 16px; } main { gap: 20px; } .paper { padding: 20px; } .lower { grid-template-columns: 1fr; gap: 18px; } figure { max-width: 180px; } .letter { font-size: calc(21px * var(--scale)); } }
+    @media (max-width: 620px) { main { grid-template-columns: 1fr; gap: 30px; } .title { font-size: calc(36px * var(--scale)); } .lower { grid-template-columns: 142px 1fr; gap: 16px; } .details .hand { font-size: calc(18px * var(--scale)); } h2 small { font-size: 9px; } }
+    @media (max-width: 360px) { .lower { grid-template-columns: 1fr; } }
+    ::selection { background: #a84d3f; color: #fff2dc; }
+  </style>
+</head>
+<body class="centered">
+  <div class="page">
+    <header>
+      <div><h1>两种笔迹</h1><p>相同文案，相同字号。保留字体原始字形，无逐字旋转或位移。</p></div>
+      <div class="controls">
+        <label><input id="centered" type="checkbox" checked>逗号、句号居中</label>
+        <label>字号 <input id="size" type="range" min="85" max="120" value="100" step="5"><output for="size" id="size-value">100%</output></label>
+      </div>
+    </header>
+    <main id="comparison"></main>
+    <footer>
+      <p>标题约 44 px / 正文 24 px / 相纸题注 20 px · 可拖动右上角滑杆比较不同字号</p>
+      <p>本地字体预览；项目主页、原文案和动画均未修改。第一款内部名称标注 Non-Commercial Use，正式嵌入前需确认相应授权。</p>
+    </footer>
+  </div>
+  <script>
+    const punctuation = (text) => text.replace(/[，。]/g, char => `<span class="punct ${char === '，' ? 'comma' : 'period'}">${char}</span>`);
+    const candidates = [
+      { name: '克莱因蓝的夜晚', className: '', face: 'KleinNight', file: 'KeLaiYinLanDeYeWan-2.ttf', coverage: '简体、繁体与本页标点均由原字体显示。' },
+      { name: '寄给冬天的情诗', className: 'winter', face: 'WinterPoem', file: 'JiGeiDongTianDeQingShi-2.ttf', coverage: '简体与本页标点完整；原字体缺少「記、憶、歲、溫」等部分繁体字。' },
+    ];
+    document.querySelector('#comparison').innerHTML = candidates.map(c => `
+      <section class="candidate ${c.className}" aria-label="${c.name}">
+        <h2>${c.name}<small>原始 TTF · Regular</small></h2>
+        <div class="title-scene"><p class="hand title">若雪 见字如晤</p></div>
+        <div class="paper">
+          <p class="hand letter">${punctuation('「若雪，见字如晤。」')}</p>
+          <p class="hand letter">${punctuation('有些瞬间，值得被永远收藏。')}<br>${punctuation('把故事，慢慢写给你听。')}<br>${punctuation('岁月温柔，记忆有光。')}</p>
+          <div class="lower">
+            <figure><img src="./after-rain.webp" alt="雨后亮着暖灯的餐馆窗户"><figcaption class="hand">11月月赛<br>比赛日</figcaption></figure>
+            <div class="details"><p class="label">标点与短句</p><p class="hand">${punctuation('“真的！” 是吗？')}<br>${punctuation('「若雪，见字如晤。」')}</p><p class="label">相纸题注 · 细笔深棕墨色</p><p class="hand">${punctuation('岁月温柔，记忆有光。')}</p></div>
+          </div>
+        </div>
+        <p class="availability">${c.coverage}</p>
+      </section>`).join('');
+    document.querySelector('#centered').addEventListener('change', event => document.body.classList.toggle('centered', event.target.checked));
+    document.querySelector('#size').addEventListener('input', event => {
+      document.documentElement.style.setProperty('--scale', Number(event.target.value) / 100);
+      document.querySelector('#size-value').value = `${event.target.value}%`;
+    });
+  </script>
+</body>
+</html>

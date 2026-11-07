@@ -1,0 +1,9 @@
+node_modules/
+public/ui/
+.data/
+.env
+.env.*
+.vercel/
+.DS_Store
+.vercel
+.env*

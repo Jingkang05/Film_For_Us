@@ -1,0 +1,23 @@
+{
+  "engine": "Chromium 151 headless",
+  "widths": [
+    375,
+    390,
+    768,
+    1024,
+    1440
+  ],
+  "results": [
+    "Default Chinese, both directions, persistence, decorative labels, node identity",
+    "Switch during seal opening and open letter; original mixed-language letter and music preserved",
+    "Film offset, frame preview modal, selection and modal language control preserved",
+    "Film viewer current frame preserved",
+    "Switch during printing, three print nodes/poses/counter, mixed captions, photo modal and music preserved",
+    "Unsaved editor fields, caret range, user language metadata, upload queue, keyboard focus and zero POSTs",
+    "Blocked localStorage gracefully falls back to in-memory switching",
+    "Film responsive views at all five widths; developing image and hung print original note preserved",
+    "Reset confirmation cancel, photo error/retry, full camera completion, bilingual replay and explicit replay reset",
+    "Album error feedback and retry action switch immediately"
+  ],
+  "pageErrors": []
+}

@@ -1,0 +1,13 @@
+Font: 寄给冬天的情诗 / JGDTDQS
+Source: JiGeiDongTianDeQingShi-2.ttf supplied by the project owner.
+Version: Version 1.00; January 6, 2022; FontCreator 11.5.0.2422 32-bit
+Copyright metadata in supplied file: 2019
+License metadata: No explicit license text supplied.
+
+This notice is provenance information, not a grant of rights. The supplied
+file's embedding flags do not establish permission for public web embedding.
+Confirm the appropriate rights before publishing or redistributing.
+
+Derived local assets preserve the original Chinese outlines and advances.
+Only U+FF0C and U+3002 are vertically repositioned in a separately named
+punctuation subset. See TYPOGRAPHY.md and scripts/build-handwriting-fonts.py.
