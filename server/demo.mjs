@@ -30,7 +30,7 @@ const demoRolls = [
 export const demo = {
   id: "demo",
   demo: true,
-  title: "Roll for us",
+  title: "Film for us",
   letter: "Dear you,\n\nSome things were easier to put on film. The wet street, the last light by the sea, the windows already glowing on our way home.\n\nI kept a few frames from each. Pick the ones you want to see again. There’s a little more on the back.",
   rolls: demoRolls.map(([id, name, color, photos]) => ({ id, name, color, photos })),
 };

@@ -288,5 +288,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const origin = new URL(process.env.APP_ORIGIN ?? `http://127.0.0.1:${port}`).origin;
   const dbPath = resolve(process.env.ROLL_DATA_DIR ?? ".data", "album.sqlite");
   const server = createApp({ dbPath, origin, password: process.env.OWNER_PASSWORD, allowLocalSetup: host === "127.0.0.1" });
-  server.listen(port, host, () => console.log(`Roll for us · ${origin}`));
+  server.listen(port, host, () => console.log(`Film for us · ${origin}`));
 }

@@ -23,7 +23,7 @@ export function envelopeObject(open: boolean, letterPreview: string) {
     <div class="envelope-back" aria-hidden="true"></div>
     <div class="envelope-mouth" aria-hidden="true"></div>
     ${open ? "" : `<div class="envelope-letter-slot" aria-hidden="true">
-      <div class="envelope-insert"><span class="letter-index">ROLL FOR US <span>1 / 1</span></span>
+      <div class="envelope-insert"><span class="letter-index">FILM FOR US <span>1 / 1</span></span>
         ${letterPreview}</div>
     </div>`}
     <div class="envelope-side envelope-side--left" aria-hidden="true"></div>
@@ -35,7 +35,7 @@ export function envelopeObject(open: boolean, letterPreview: string) {
       </svg>
     </div>
     <div class="envelope-writing" aria-hidden="true">
-      <span class="envelope-brand">Roll <i>for us</i></span>
+      <span class="envelope-brand">Film <i>for us</i></span>
     </div>
     <div class="envelope-flap-shadow" aria-hidden="true"></div>
     <div class="envelope-hinge">

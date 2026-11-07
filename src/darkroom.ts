@@ -109,7 +109,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
     return `<div class="letter-set ${open ? "letter-set--open" : ""}">
       ${envelopeObject(open, copy)}
       ${open ? `<article class="letter-paper">
-        <span class="letter-index">ROLL FOR US <span>1 / 1</span></span>
+        <span class="letter-index">FILM FOR US <span>1 / 1</span></span>
         <div class="letter-reading" tabindex="0">
           ${copy}
           <button type="button" class="paper-action" data-action="table">${ui("enterDarkroom")} ${icon("right")}</button>
@@ -168,7 +168,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
   }
 
   function table() {
-    const title = album.title && album.title !== "Roll for us" ? esc(album.title) : "Roll <i>for us</i>";
+    const title = album.title && !["Roll for us", "Film for us"].includes(album.title) ? esc(album.title) : "Film <i>for us</i>";
     return `<div class="table-heading"><h1 tabindex="-1" dir="auto" ${chineseAttributes(album.title)}>${title}</h1></div>
       <div class="rolls">${album.rolls.map((roll, index) => index === 2
         ? `<button type="button" class="roll roll--3 roll--instant" data-action="instant"

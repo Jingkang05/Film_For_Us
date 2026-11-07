@@ -19,7 +19,7 @@ export async function mountManage() {
   css.rel = "stylesheet";
   css.href = "/manage.css";
   document.head.append(css);
-  document.title = "Album editor · Roll for us";
+  document.title = "Album editor · Film for us";
   try {
     editor(await api<ManageData>("/api/manage"));
   } catch (error) {
@@ -122,7 +122,7 @@ function editor(initial: ManageData) {
     const share = `${location.origin}/a/${data.shareId}`;
     const published = data.publishedRevision !== null;
     app.innerHTML = `<section class="owner">
-      <header class="owner-heading"><div><a href="/demo" class="owner-brand">Roll <i>for us</i></a><h1>${ui("albumEditor")}</h1></div>
+      <header class="owner-heading"><div><a href="/demo" class="owner-brand">Film <i>for us</i></a><h1>${ui("albumEditor")}</h1></div>
         <button class="text-button" data-action="logout" type="button">${ui("signOut")}</button></header>
       <div class="owner-toolbar">
         <p id="revision-status">${dirty ? ui("unsaved") : ui("draftVersion", { version: data.revision })} · ${published ? ui("publishedVersion", { version: data.publishedRevision! }) : ui("unpublished")}</p>
