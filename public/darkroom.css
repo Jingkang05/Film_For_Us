@@ -35,8 +35,9 @@
   --red-ink: #8e3026;
   --red-note: #f49485;
   --line: #856154;
-  --font-zh: "Winter Poem CJK", "Jason Handwriting Fallback";
-  --font-zh-title: var(--font-zh);
+  --font-zh: "CustomChineseHandwriting";
+  --font-zh-display: var(--font-zh);
+  --font-zh-title: var(--font-zh-display);
   --font-zh-body: var(--font-zh);
   --font-zh-caption: var(--font-zh);
   --cjk: var(--font-zh);

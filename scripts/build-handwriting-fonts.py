@@ -1,113 +1,79 @@
-"""Build local CJK webfonts. Requires fonttools[woff] (including Brotli).
-
-python scripts/build-handwriting-fonts.py /path/JiGeiDongTianDeQingShi-2.ttf \
-    /path/JasonHandwriting7p.ttf
+"""Build the owner-supplied FontQu Smile webfonts; requires fonttools[woff].
+Run: python scripts/build-handwriting-fonts.py [source.ttf]
+Only outlines of U+FF0C and U+3002 are optically centered; text stays unchanged.
 """
-
 import argparse
+import statistics
 from pathlib import Path
-
 from fontTools import subset
+from fontTools.pens.boundsPen import BoundsPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.ttLib import TTFont
 
-
 ROOT = Path(__file__).resolve().parent.parent
-ASSETS = ROOT / "public" / "assets"
-# Restrict these faces to Chinese: keep the existing Latin and numeral faces.
+FONTS = ROOT / 'public/fonts'
 RANGES = [(0x2E80, 0x9FFF), (0xF900, 0xFAFF), (0xFE10, 0xFE1F),
-          (0xFE30, 0xFE4F), (0xFF01, 0xFF60), (0xFFE0, 0xFFE6)]
-MARKS = {0xFF0C: 0.38, 0x3002: 0.35}  # upward translation, in em
+          (0xFE30, 0xFE4F), (0xFF01, 0xFF60), (0xFFE0, 0xFFE6), (0x20000, 0x323AF)]
+MARKS = {0xFF0C, 0x3002}
 
-
-def cjk_points(font):
-    return {cp for cp in font.getBestCmap()
-            if any(start <= cp <= end for start, end in RANGES)}
-
-
-def save_subset(font, points, filename):
+def save(font, points, filename, family):
     options = subset.Options()
     options.recalc_timestamp = False
-    options.drop_tables += ["FFTM"]
-    options.name_IDs = ["*"]  # Retain the supplied font's copyright and metadata.
+    options.name_IDs = ['*']
     worker = subset.Subsetter(options=options)
     worker.populate(unicodes=points)
     worker.subset(font)
-    font.flavor = "woff2"
-    path = ASSETS / filename
-    font.save(path)
-    print(f"{filename}: {len(points)} code points, {path.stat().st_size:,} bytes")
-
+    for record in font['name'].names:
+        values = {1: family, 4: family + ' Regular', 6: family.replace(' ', '') + '-Regular'}
+        if record.nameID in values:
+            record.string = values[record.nameID].encode(record.getEncoding())
+    font.flavor = 'woff2'
+    font.save(FONTS / filename)
+    print(filename, len(points), (FONTS / filename).stat().st_size)
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("winter_poem", type=Path)
-    parser.add_argument("jason7", type=Path)
-    args = parser.parse_args()
-    ASSETS.mkdir(exist_ok=True)
-    primary = TTFont(args.winter_poem)
-    primary_points = cjk_points(primary)
-    save_subset(primary, primary_points - MARKS.keys(), "winter-poem-cjk.woff2")
-
-    # Make punctuation work in native inputs too, with no text/DOM substitution.
-    # Advance widths and code points stay intact; only the two outlines move.
-    marks = TTFont(args.winter_poem)
+    parser.add_argument('source', nargs='?', type=Path, default=FONTS/'custom-chinese.ttf')
+    source = parser.parse_args().source
+    font = TTFont(source)
+    if font['OS/2'].fsType & (2 | 0x100 | 0x200):
+        raise ValueError('Font embedding or subsetting flags prohibit this build')
+    points = {cp for cp in font.getBestCmap() if any(a <= cp <= b for a,b in RANGES)}
+    FONTS.mkdir(exist_ok=True)
+    save(font, points - MARKS, 'custom-chinese-cjk.woff2', 'Roll Custom Chinese')
+    marks = TTFont(source)
     glyphs = marks.getGlyphSet()
     cmap = marks.getBestCmap()
-    for cp, lift_em in MARKS.items():
+    def center(cp):
+        pen = BoundsPen(glyphs)
+        glyphs[cmap[cp]].draw(pen)
+        return (pen.bounds[1] + pen.bounds[3]) / 2
+    target = statistics.median(center(ord(c)) for c in '中文书信你好我们照片时光温柔若雪开心回忆喜欢')
+    for cp in sorted(MARKS):
+        delta = round(target - center(cp))
         name = cmap[cp]
         pen = TTGlyphPen(glyphs)
-        glyphs[name].draw(TransformPen(pen, (1, 0, 0, 1, 0,
-                                          round(lift_em * marks["head"].unitsPerEm))))
-        marks["glyf"][name] = pen.glyph()
-    for name_id, value in [(1, "Roll Winter Poem Marks"),
-                           (4, "Roll Winter Poem Marks Regular"),
-                           (6, "RollWinterPoemMarks-Regular")]:
-        for record in marks["name"].names:
-            if record.nameID == name_id:
-                record.string = value.encode(record.getEncoding())
-    save_subset(marks, MARKS.keys(), "winter-poem-punctuation.woff2")
-
-    fallback = TTFont(args.jason7)
-    fallback_points = cjk_points(fallback) - primary_points
-    save_subset(fallback, fallback_points, "jason7-cjk-fallback.woff2")
-
-    # Broad CJK ranges keep the CSS small; the font cmap determines which
-    # characters exist. The separately named fallback is only fetched on misses.
-    def ranges(groups):
-        return ",".join(f"U+{a:X}" if a == b else f"U+{a:X}-{b:X}" for a, b in groups)
-
-    primary_ranges = []
-    for start, end in RANGES:
-        for cp in sorted(MARKS):
-            if start <= cp <= end:
-                if start < cp:
-                    primary_ranges.append((start, cp - 1))
-                start = cp + 1
-        if start <= end:
-            primary_ranges.append((start, end))
-    faces = []
-    for family, filename, groups in [
-        ("Winter Poem CJK", "winter-poem-cjk.woff2", primary_ranges),
-        ("Winter Poem CJK", "winter-poem-punctuation.woff2", [(cp, cp) for cp in MARKS]),
-        ("Jason Handwriting Fallback", "jason7-cjk-fallback.woff2", RANGES),
-    ]:
-        # Register the original single drawing for all requested weights/styles;
-        # Chinese never receives fake bolding or synthetic italic slant.
-        for style in ("normal", "italic"):
-            faces.append(f'''@font-face {{
-  font-family: "{family}";
-  src: url("/assets/{filename}") format("woff2");
+        glyphs[name].draw(TransformPen(pen, (1,0,0,1,0,delta)))
+        marks['glyf'][name] = pen.glyph()
+        print(f'U+{cp:X} lift {delta / marks["head"].unitsPerEm:.4f}em ({delta} units)')
+    save(marks, MARKS, 'custom-chinese-punctuation.woff2', 'Roll Custom Chinese Marks')
+    ranges = ','.join(f'U+{a:X}-{b:X}' for a,b in RANGES)
+    # Separate punctuation ranges prevent duplicate fetching/overlapping faces.
+    ranges = ranges.replace('U+2E80-9FFF','U+2E80-3001,U+3003-9FFF').replace('U+FF01-FF60','U+FF01-FF0B,U+FF0D-FF60')
+    css = ['/* Generated from the owner-supplied TTF. Latin retains existing fonts. */']
+    for file, coverage in [('custom-chinese-cjk.woff2',ranges), ('custom-chinese-punctuation.woff2','U+FF0C,U+3002')]:
+        for style in ['normal','italic']:
+            css.append(f'''@font-face {{
+  font-family: "CustomChineseHandwriting";
+  src: url("/fonts/{file}") format("woff2");
   font-style: {style};
   font-weight: 100 900;
   font-display: swap;
-  unicode-range: {ranges(groups)};
+  size-adjust: 125%;
+  unicode-range: {coverage};
 }}''')
-    (ROOT / "public" / "typography.css").write_text(
-        "/* Generated by scripts/build-handwriting-fonts.py. CJK only. */\n"
-        + "\n".join(faces) + "\n", encoding="utf-8")
+    (ROOT/'public/typography.css').write_text('\n'.join(css)+'\n')
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
