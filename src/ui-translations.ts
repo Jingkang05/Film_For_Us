@@ -1,5 +1,10 @@
 // UI copy only. Album text, captions, names and decorative labels never enter this dictionary.
 export const zh = {
+  "convertingHeic": "正在将 HEIC/HEIF 转成 JPEG…",
+  "heicFailed": "无法转换此 HEIC/HEIF 照片。请导出为 JPEG 后重试。",
+  "unsupportedUpload": "此文件不是支持的图片。请选择 JPEG、PNG、WebP、HEIC 或 HEIF。",
+  "convertedSize": "转换后的照片超过 20 MB。请导出较小的 JPEG 后重试。",
+
   "sharingCollision": "此分享网址已被其他相册使用。请选择其他后缀。",
   "uploadRateLimit": "上传请求已达上限。请在 15 分钟后重试。",
   "albumMissing": "未找到此相册。",
@@ -156,7 +161,7 @@ export const zh = {
   "destinationRoll": "放入哪卷",
   "choosePhotos": "选择照片",
   "dropPhotos": "也可将照片拖到这里",
-  "uploadFormats": "JPEG、PNG 或 WebP · 每张不超过 20 MB。HEIC 照片请先导出为 JPEG 或 PNG。",
+  "uploadFormats": "JPEG、PNG、WebP、HEIC 或 HEIF · 每张不超过 20 MB。HEIC/HEIF 会在本机转成 JPEG。",
   "retryFile": "重新上传 {name}",
   "discardFile": "从上传列表移除 {name}",
   "uploadCount": "上传 {count} 张照片",
@@ -243,6 +248,11 @@ export const zh = {
 export type UIKey = keyof typeof zh;
 export type UILanguage = "zh" | "en";
 export const en: Record<UIKey, string> = {
+  "convertingHeic": "Converting HEIC/HEIF to JPEG…",
+  "heicFailed": "This HEIC/HEIF photo could not be converted. Export it as JPEG and try again.",
+  "unsupportedUpload": "This file is not a supported image. Choose JPEG, PNG, WebP, HEIC or HEIF.",
+  "convertedSize": "The converted photo exceeds 20 MB. Export a smaller JPEG and try again.",
+
   "sharingCollision": "This sharing address is already reserved by another album. Choose another suffix.",
   "uploadRateLimit": "Upload limit reached. Try again in 15 minutes.",
   "albumMissing": "This album could not be found.",
@@ -399,7 +409,7 @@ export const en: Record<UIKey, string> = {
   "destinationRoll": "Destination roll",
   "choosePhotos": "Choose photos",
   "dropPhotos": "or drop them here",
-  "uploadFormats": "JPEG, PNG, or WebP · Up to 20 MB each. Export HEIC photos as JPEG or PNG first.",
+  "uploadFormats": "JPEG, PNG, WebP, HEIC or HEIF · Up to 20 MB each. HEIC/HEIF converts to JPEG on your device.",
   "retryFile": "Retry {name}",
   "discardFile": "Remove {name} from the upload list",
   "uploadCount": "Upload {count} photos",
@@ -485,6 +495,11 @@ export const en: Record<UIKey, string> = {
 };
 export const uiTranslations = { zh, en } as const;
 export const errorKeys: Readonly<Record<string, UIKey>> = {
+  "Converting HEIC/HEIF to JPEG\u2026": "convertingHeic",
+  "This HEIC/HEIF photo could not be converted. Export it as JPEG and try again.": "heicFailed",
+  "This file is not a supported image. Choose JPEG, PNG, WebP, HEIC or HEIF.": "unsupportedUpload",
+  "The converted photo exceeds 20 MB. Export a smaller JPEG and try again.": "convertedSize",
+
   "This sharing address is already reserved by another album. Choose another suffix.": "sharingCollision",
   "Upload limit reached. Try again in 15 minutes.": "uploadRateLimit",
   "This album could not be found.": "albumMissing",

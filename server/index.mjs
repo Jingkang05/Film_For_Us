@@ -14,7 +14,7 @@ const maxPixels = 50_000_000;
 const sessionLifetime = 12 * 60 * 60;
 const loginWindow = 15 * 60 * 1000;
 const mimeTypes = { html: "text/html; charset=utf-8", css: "text/css; charset=utf-8",
-  js: "text/javascript; charset=utf-8", svg: "image/svg+xml", webp: "image/webp", woff2: "font/woff2" };
+  js: "text/javascript; charset=utf-8", txt: "text/plain; charset=utf-8", svg: "image/svg+xml", webp: "image/webp", woff2: "font/woff2" };
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const derivePassword = promisify(scrypt);
 const photoId = "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
@@ -23,7 +23,7 @@ const shareId = "[^/]+";
 const publishedRoute = new RegExp(`^/api/a/(${shareId})(?:/media/(${photoId})/(thumb|full))?$`);
 const draftMedia = new RegExp(`^/api/draft-media/(${photoId})/(thumb|full)$`);
 const pageRoute = new RegExp(`^/(?:demo/?|manage(?:/preview)?/?|editor(?:/[^/]+)?/?|preview/[^/]+/?|a/${shareId}/?)?$`);
-const staticRoute = /^\/(?:(?:darkroom|envelope|manage|polaroid|typography)\.css|ui\/[a-z-]+\.js|assets\/[a-z0-9.-]+\.(?:svg|webp|woff2)|samples\/[a-z0-9-]+\.webp)$/;
+const staticRoute = /^\/(?:(?:darkroom|envelope|manage|polaroid|typography)\.css|ui\/(?:[a-z-]+\.js|heic-decoder-license\.txt)|assets\/[a-z0-9.-]+\.(?:svg|webp|woff2)|samples\/[a-z0-9-]+\.webp)$/;
 const soundtrack = "/assets/who-knows.m4a";
 
 async function body(req, limit, tooLarge = "The file exceeds the size limit.") {
@@ -291,7 +291,7 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
   return (req, res) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Referrer-Policy", "no-referrer");
-    res.setHeader("Content-Security-Policy", "default-src 'self'; connect-src 'self' https://vercel.com/api/blob/; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+    res.setHeader("Content-Security-Policy", "default-src 'self'; connect-src 'self' https://vercel.com/api/blob/; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
     res.setHeader("X-Robots-Tag", "noindex, nofollow");
     return route(req, res).catch((error) => {
       if (res.destroyed || res.headersSent) return;

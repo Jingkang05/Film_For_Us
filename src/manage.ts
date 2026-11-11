@@ -1,3 +1,4 @@
+import { prepareUpload } from "./heic-upload.js";
 import { captureEditorFocus, restoreEditorFocus, type EditorFocus } from "./editor-focus.js";
 import { toMemoryProject, serializeMemoryProject } from "./memory-project.js";
 import { mountAlbumLibrary } from "./album-library.js";
@@ -17,7 +18,6 @@ type Upload = {
 };
 
 const photoCount = (total: number) => ui(total === 1 ? "onePhoto" : "photoCount", { count: total });
-const maxPhotoBytes = 20 * 1024 * 1024;
 
 export async function mountManage(albumId?: string) {
   const css = document.createElement("link");
@@ -100,7 +100,7 @@ function editor(initial: ManageData) {
             <button type="button" class="icon-button" data-action="up" data-id="${photo.id}" ${uiAttr("moveUp", { number: i + 1 })} ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
             <button type="button" class="icon-button" data-action="down" data-id="${photo.id}" ${uiAttr("moveDown", { number: i + 1 })} ${i === roll.photos.length - 1 ? "disabled" : ""}>${icon("down")}</button>
             <button type="button" class="text-button" data-action="remove" data-id="${photo.id}">${ui("remove")}</button>
-            <label class="replace-photo">${ui("replacePhoto")}<input type="file" name="replace" data-id="${photo.id}" accept="image/jpeg,image/png,image/webp"></label>
+            <label class="replace-photo">${ui("replacePhoto")}<input type="file" name="replace" data-id="${photo.id}" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"></label>
           </div>
         </div>
       </article>`).join("") : `<p class="owner-empty">${ui("emptyRoll")}</p>`}</fieldset>`;
@@ -269,18 +269,24 @@ function editor(initial: ManageData) {
       const query = new URLSearchParams({ id: item.id, roll: item.roll, revision: String(data.revision) });
       if (item.replace) query.set("replace", item.replace);
       try {
-        if (item.file.size > maxPhotoBytes) throw new Error("The file exceeds the size limit.");
+        const prepared = await prepareUpload(item.file, () => {
+          item.status = "Converting HEIC/HEIF to JPEG…";
+          render();
+          announce(t("convertingHeic"));
+        });
+        item.status = "";
+        render();
         if (data.directUpload) {
           const { url } = await api<{ url?: string }>(`${endpoint}/upload-target?${query}`, { method: "POST" });
           if (url) {
             const result = await fetch(url, {
-              method: "PUT", headers: { "Content-Type": "application/octet-stream" }, body: item.file,
+              method: "PUT", headers: { "Content-Type": "application/octet-stream" }, body: prepared,
             }).catch(() => null);
             if (!result?.ok) throw new Error("The photo could not be uploaded. Check your connection and try again.");
           }
         }
         data = await api<ManageData>(`${endpoint}/upload?${query}`, {
-          method: "POST", body: data.directUpload ? undefined : item.file,
+          method: "POST", body: data.directUpload ? undefined : prepared,
         });
         normalize();
         item.state = "uploaded";

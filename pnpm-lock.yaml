@@ -11,6 +11,9 @@ importers:
       '@vercel/blob':
         specifier: 2.8.2
         version: 2.8.2
+      heic-to:
+        specifier: 1.6.7
+        version: 1.6.7
       sharp:
         specifier: 0.35.5
         version: 0.35.5
@@ -219,6 +222,9 @@ packages:
   get-stream@6.0.1:
     resolution: {integrity: sha512-ts6Wi+2j3jQjqi70w5AlN8DFnkSwC+MqmxEzdEALB2qXZYV3X/b1CTfgPLGJNMeAWxdPfU8FO1ms3NUfaHCPYg==}
     engines: {node: '>=10'}
+
+  heic-to@1.6.7:
+    resolution: {integrity: sha512-GCPYNl86u6eZ7mr2aa+uQB+PrQOVKSBYfH8esovr8kh2c6EYQSDYIJ6uhXSmM2hPC8PdBVJ/Trn0jnfM9H9gvg==}
 
   human-signals@2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
@@ -491,6 +497,8 @@ snapshots:
       strip-final-newline: 2.0.0
 
   get-stream@6.0.1: {}
+
+  heic-to@1.6.7: {}
 
   human-signals@2.1.0: {}
 
