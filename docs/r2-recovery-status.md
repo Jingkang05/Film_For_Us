@@ -63,6 +63,7 @@ The recovered 33 objects total **17,702,662 bytes**: originals 16,145,576; thumb
 | `scripts/verify-production-storage.mjs`, `server/blob-album.mjs` | Network-free routine builds; explicit metadata-only preflight; asset/backup scanning only in an explicitly requested deep audit |
 | `scripts/storage-migration.mjs` | Required media inventory, private atomic journal, bounded serial copy, checksum/type/size readback, interruption/resume, guarded initialization and metadata round-trip verification |
 | `scripts/recover-local-album.mjs` | Read-only SQLite recovery validated against saved release content and per-variant hashes; explicitly reports missing data |
+| `scripts/rebuild-recovery-variants.mjs` | Uses the unchanged Sharp pipeline to map supplied originals only when both generated variant hashes match a unique recorded photo ID; unmatched or ambiguous files remain unresolved |
 | `scripts/preview-r2.mjs` | Loopback-only in-memory repository preview with public sample images, never production data or credentials |
 | `scripts/verify-r2-connection.mjs` | Prepared live synthetic-object SDK check for upload/read/stat/create-only/CAS/stale-CAS/delete/missing; not executed without credentials |
 | `vercel.json`, `.vercelignore`, `.gitignore` | Permit R2 signed upload connections, preserve private recovery/dependency exclusions, omit preview/test/doc artifacts from Vercel packaging |
@@ -92,7 +93,7 @@ No claim is made that strict authorization can be preserved with zero authority 
 
 - Production-mode build passed with `VERCEL_ENV=production` and default storage preflight: output explicitly states build storage reads were skipped.
 - TypeScript and all syntax checks passed.
-- Full `node --test` suite: **64 passed, 0 failed**, including exact-byte backup integrity. Loopback-dependent tests required execution outside the restricted network sandbox. A SQLite Uint8Array compatibility issue found by the full suite was fixed and the complete suite rerun successfully.
+- Full `node --test` suite: **65 passed, 0 failed**, including exact-byte backup integrity and hash-verified reconstruction mapping. Loopback-dependent tests required execution outside the restricted network sandbox. A SQLite Uint8Array compatibility issue found by the full suite was fixed and the complete suite rerun successfully.
 - Offline Blob audit: **8 assertions passed, zero production requests**. Metadata preflight now asserts one GET, zero HEADs and zero backup writes; explicit deep audit is exercised only against synthetic memory objects.
 - New tests cover S3 command mapping, create-only/CAS headers, missing objects, 403/429/500 normalization, short signed expiry/header binding, configuration rejection, stale edits, stable-ID replacement, unpublish after byte-cache/304 hits, preview session revocation, unauthorized upload/delete, freeze before login writes, missing initialization, byte limits, allowlisted fallback, duplicate inventory keys, budget stop/resume and corrupt source/destination handling.
 - Local browser verified envelope opening, entry to the film table, photo loading through R2-shaped API responses, liking, development and hanging into the final collection with public repository sample images. Existing typography and animation edits in the user's working tree were not incorporated into migration source changes.
