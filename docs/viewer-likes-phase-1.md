@@ -4,7 +4,7 @@
 
 `mountDarkroom` previously initialized every visit with `fresh()`, including an empty `selected` list. Both liking controls already update that list through `toggleMarked`, and the existing developing queue is derived from it. Nothing saved the selection across visits.
 
-This change restores only `selected`. The envelope, current roll, browsing position, developing queue and hung prints start fresh. The explicit “Start over” action also keeps likes while restarting the experience; its existing confirmation text now describes that behavior. The existing persisted `pageshow` handler still reloads the viewer after a back-forward-cache restore, which restarts the envelope and reloads likes normally.
+This change restores only `selected`. The envelope, current roll and browsing position start fresh. Saved likes are treated as ready prints: opening the collection displays them already hung. Only photos newly selected during the current visit go through developing. The explicit “Start over” action also keeps likes while restarting the experience; its existing confirmation text now describes that behavior. The existing persisted `pageshow` handler still reloads the viewer after a back-forward-cache restore, which restarts the envelope and reloads likes normally.
 
 ## Persistence
 
@@ -14,7 +14,7 @@ This change restores only `selected`. The envelope, current roll, browsing posit
 - The API's immutable album ID is unchanged when its custom URL suffix changes. Photos use their existing stable IDs, not positions.
 - Initialization validates the schema and album ID, deduplicates saved IDs and filters IDs absent from the current album. Stale IDs are removed from storage on the next selection change.
 - Every like/unlike writes synchronously before rendering. Blocked reads, malformed data and failed writes are caught; the current visit continues with in-memory state.
-- The final collection still uses the existing selection and developing flow. Once developing starts, the existing viewer locks selection changes until restarting.
+- The final collection is derived from the current selection. Saved selections are already hung; new selections use the existing developing flow. The hang action sits directly below its “Ready to hang” instruction. Once developing starts, the existing viewer locks selection changes until restarting.
 
 ## Changed files for this phase
 
@@ -22,13 +22,15 @@ This change restores only `selected`. The envelope, current roll, browsing posit
 - `src/darkroom.ts`: restore likes at initialization, save in the shared toggle function, preserve likes on explicit restart.
 - `src/ui-translations.ts`: update the existing restart explanation in Chinese and English.
 - `test/viewer-likes.test.mjs`: persistence, schema, deletion, reorder, isolation, slug-independent ID, rapid updates and storage failures.
+- `src/viewer-collection.ts` and `test/viewer-collection.test.mjs`: derive hung and pending photos from the current selection and ready prints.
+- `public/darkroom.css`: center the hang action immediately below its instruction.
 - This document.
 
 The working tree already contained unrelated changes from earlier tasks. This phase preserves them. No production deployment, production settings, editor, upload API or Blob changes are part of this phase.
 
 ## Automated verification
 
-TypeScript build and type checking pass. All 22 tests pass, including 8 new persistence tests and the existing envelope animation lifecycle, album/API, owner, translation and URL-suffix tests.
+TypeScript build and type checking pass. All 27 tests pass, including 5 collection readiness tests, 8 persistence tests and the existing envelope animation lifecycle, album/API, owner, translation and URL-suffix tests.
 
 Local browser verification used the demo on an isolated localhost origin: two photos were liked, refresh returned to the sealed envelope, both heart states were restored, and unliking the first left only `rain-2` in the developed final collection. Explicit restart returned to the envelope; a new tab on another URL for the same album restored the remaining one-photo selection. Browser Back also returned to the envelope. No production album content or viewer preferences were touched.
 
@@ -39,7 +41,7 @@ Use a normal Safari tab on the same origin each time:
 - Open an album, confirm the sealed envelope and original opening animation, then like two photos.
 - Refresh: the envelope must restart; reopen the rolls and confirm both hearts and the collection count.
 - Close the tab, terminate Safari and reopen the same album: repeat the check.
-- Unlike one photo and like another; develop the collection and confirm only the current selections appear.
+- Unlike one photo and like another; open the collection and confirm saved selections are already hung and only the new photo needs developing. Confirm the hang button is below its instruction.
 - Choose “Start over”: reopen the envelope and confirm likes remain, but browsing and developing progress restart.
 - Navigate away and use Safari Back/Forward: returning must restart at the envelope with likes intact.
 - Visit a second album and confirm its likes are independent.

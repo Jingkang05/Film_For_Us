@@ -9,6 +9,7 @@ import { envelopeObject } from "./envelope.js";
 import { envelopeMotion } from "./envelope-config.js";
 import { createEnvelopeOpening } from "./envelope-motion.js";
 import { loadViewerLikes, saveViewerLikes } from "./viewer-likes.js";
+import { viewerCollection } from "./viewer-collection.js";
 
 const scenes = ["envelope", "letter", "table", "film", "instant", "tray", "line"] as const;
 type Scene = typeof scenes[number];
@@ -32,7 +33,9 @@ export function mountDarkroom(album: Album, preview: boolean) {
   const revealedPhotos = new Set<string>();
   const filmAudio = createFilmAudio();
   const musicControl = mountSoundtrack(app);
-  let state = { ...fresh(), selected: loadViewerLikes(album.id, photos.keys(), preview) };
+  const restoredLikes = loadViewerLikes(album.id, photos.keys(), preview);
+  const readyPrints = new Set(restoredLikes);
+  let state = { ...fresh(), selected: restoredLikes };
   // A back/forward-cache restore must also begin a new reading visit.
   window.addEventListener("pageshow", event => {
     if (event.persisted) window.location.reload();
@@ -613,6 +616,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
     const viewer = scene === "film" && roll && usesViewer(roll);
     const total = photos.size;
     const selected = state.selected.length;
+    const pending = viewerCollection(state.selected, readyPrints).pending.length;
     const target = state.queue.length || selected;
     const step = ["envelope", "letter"].includes(scene) ? 1 : scene === "table" || scene === "film" ? 2 : 3;
     const sceneLabel = ["THE ENVELOPE", "THE ROLLS", "THE TRAY"][step - 1];
@@ -641,15 +645,15 @@ export function mountDarkroom(album: Album, preview: boolean) {
         <span>${preview ? "DRAFT · " : album.demo ? "DEMO · " : ""}${status}</span></header>
       <div class="stage">${stage}</div>
       <footer class="scene-foot">
-        ${hint ? `<p class="stage-hint">${hint}</p>` : ""}
+        ${scene === "tray" && development === "ready"
+          ? `<div class="hang-prompt"><p class="stage-hint">${hint}</p><button class="action" type="button" data-action="hang">${ui("hangPrint")}</button></div>`
+          : hint ? `<p class="stage-hint">${hint}</p>` : ""}
         <div class="scene-actions">
           ${step === 1 ? "" : scene === "film" || (scene === "tray" && !state.queue.length)
             ? `<button class="text-button" type="button" data-action="table">${icon("left")} ${ui("backTable")}</button>`
             : `<button class="text-button" type="button" data-action="reset">${ui("startOver")}</button>`}
           ${(scene === "table" || scene === "film") && selected
-            ? `<button class="action" type="button" data-action="tray">${ui(selected === 1 ? "developOne" : "developCount", { count: selected })} ${icon("right")}</button>` : ""}
-          ${scene === "tray" && development === "ready"
-            ? `<button class="action" type="button" data-action="hang">${ui("hangPrint")}</button>` : ""}
+            ? `<button class="action" type="button" data-action="tray">${ui(pending ? pending === 1 ? "developOne" : "developCount" : "viewSavedPrints", { count: pending || selected })} ${icon("right")}</button>` : ""}
           ${ownerLink}
         </div>
       </footer>
@@ -922,6 +926,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
     const photo = currentPhoto();
     if (!photo || development !== "ready") return;
     state.hung.push(photo.id);
+    readyPrints.add(photo.id);
     justHung = photo.id;
     development = "waiting";
     switchScene(state.hung.length === state.queue.length ? "line" : "tray");
@@ -965,7 +970,12 @@ export function mountDarkroom(album: Album, preview: boolean) {
         app.querySelector<HTMLButtonElement>(".viewer-mark")?.focus({ preventScroll: true });
       }
     }
-    if (action === "tray" && state.selected.length) switchScene("tray");
+    if (action === "tray" && state.selected.length) {
+      const collection = viewerCollection(state.selected, readyPrints);
+      state.hung = collection.hung;
+      if (!collection.pending.length) state.queue = [...state.selected];
+      switchScene(collection.pending.length ? "tray" : "line");
+    }
     if (action === "prev" || action === "next") {
       const feed = app.querySelector<HTMLElement>(".film-feed")!;
       const cell = feed.querySelector<HTMLElement>(".film-cell")!;

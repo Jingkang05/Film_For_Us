@@ -148,6 +148,8 @@ h1[tabindex="-1"]:focus { outline: none; }
   min-height: 7.25rem;
   padding: .5rem clamp(1.4rem, 5vw, 5rem) max(1.75rem, env(safe-area-inset-bottom));
 }
+.hang-prompt { display: grid; justify-items: center; gap: .65rem; margin-bottom: .8rem; }
+.hang-prompt .stage-hint { margin: 0; }
 .scene-actions {
   min-height: 44px;
   display: flex;
