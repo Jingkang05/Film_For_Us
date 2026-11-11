@@ -8,6 +8,7 @@ import { mountSoundtrack } from "./soundtrack.js";
 import { envelopeObject } from "./envelope.js";
 import { envelopeMotion } from "./envelope-config.js";
 import { createEnvelopeOpening } from "./envelope-motion.js";
+import { loadViewerLikes, saveViewerLikes } from "./viewer-likes.js";
 
 const scenes = ["envelope", "letter", "table", "film", "instant", "tray", "line"] as const;
 type Scene = typeof scenes[number];
@@ -31,7 +32,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
   const revealedPhotos = new Set<string>();
   const filmAudio = createFilmAudio();
   const musicControl = mountSoundtrack(app);
-  let state = fresh();
+  let state = { ...fresh(), selected: loadViewerLikes(album.id, photos.keys(), preview) };
   // A back/forward-cache restore must also begin a new reading visit.
   window.addEventListener("pageshow", event => {
     if (event.persisted) window.location.reload();
@@ -932,6 +933,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
   function toggleMarked(id: string) {
     const added = !state.selected.includes(id);
     state.selected = added ? [...state.selected, id] : state.selected.filter((item) => item !== id);
+    saveViewerLikes(album.id, state.selected, preview);
     render();
     announceUI(added ? "marked" : "unmarked", { count: state.selected.length });
     return added;
@@ -1007,7 +1009,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
       preserveFocus = true;
       dialog.close();
       window.clearTimeout(timer);
-      state = fresh();
+      state = { ...fresh(), selected: state.selected };
       revealedPhotos.clear();
       development = "waiting";
       justHung = "";
