@@ -150,9 +150,6 @@ export function validatePublication(row, revision, hasUpload) {
     throw new Problem(422, "Add a title and opening letter, name all three rolls, and add at least one photo to each roll.");
   }
   const photos = next.rolls.flatMap((roll) => roll.photos);
-  if (photos.some((photo) => !photo.date)) {
-    throw new Problem(422, "Add a date to each photo before publishing.");
-  }
   if (photos.some((photo) => !hasUpload(photo.id))) {
     throw new Problem(422, "Wait for each photo to finish uploading before publishing.");
   }

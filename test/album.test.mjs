@@ -141,8 +141,6 @@ test("private uploads, revision checks, and published snapshots survive restart"
   draft.album.rolls[0].photos.shift();
   draft.album.rolls[0].photos[0].date = "";
   draft = await post("save", { revision: draft.revision, album: draft.album });
-  const missingDate = await post("publish", { revision: draft.revision }, 422);
-  assert.equal(missingDate.error, "Add a date to each photo before publishing.");
   assert.equal((await request(firstPhoto.full)).status, 404);
   assert.equal((await request(publishedPhoto.full, { auth: false })).status, 200);
 
@@ -150,7 +148,6 @@ test("private uploads, revision checks, and published snapshots survive restart"
   await start();
   assert.equal((await (await request("/api/manage")).json()).revision, draft.revision);
   assert.equal((await request(publishedPhoto.full, { auth: false })).status, 200);
-  draft.album.rolls[0].photos[0].date = "2026-11-06";
   draft.album.rolls[0].photos[0].note = "修订后的测试留言。";
   draft.album.shareSlug = "our-memories";
   draft = await post("save", { revision: draft.revision, album: draft.album });
@@ -160,6 +157,7 @@ test("private uploads, revision checks, and published snapshots survive restart"
   assert.equal((await request(publishedPhoto.full, { auth: false })).status, 404);
   const latest = await (await request(share, { auth: false })).json();
   assert.equal(latest.rolls[0].photos[0].note, "修订后的测试留言。");
+  assert.equal(latest.rolls[0].photos[0].date, "");
   assert.equal(latest.rolls.flatMap((roll) => roll.photos).length, 17);
   assert.equal((await request("/api/a/our-story", { auth: false })).status, 200);
   const renamedLink = `/api/a/${encodeURIComponent("our-memories")}`;
