@@ -92,6 +92,11 @@ export async function copyInventory({ source, destination, journal, persist = as
 
 async function main() {
   const [command, input, output] = process.argv.slice(2);
+  if (command === "restore-pending" && input) {
+    const manifest = JSON.parse(await readFile(input, "utf8"));
+    const result = await openR2Album(createR2Storage(r2Config())).restorePendingPhotos(manifest);
+    console.log(JSON.stringify(result)); return;
+  }
   if (command === "plan" && input && output) {
     const state = JSON.parse(await readFile(input, "utf8"));
     await saveJournal(output, { version: 1, metadataSha256: contentHash(state), provenance: "requires verification before cutover", objects: requiredMedia(state) });

@@ -192,6 +192,45 @@ export function openR2Album(objects, { prefix = "roll-for-us", fallback, fallbac
       return readBytes(r, maximumSizeInBytes);
     },
     async exportState() { const { state } = await snapshot(true); return { ...state, ...(await authRead()).value }; },
+    // Operator recovery tool only; deliberately not exposed as an HTTP route.
+    // Verified media enters the draft; the existing editor Publish action is
+    // still required before it becomes public.
+    async restorePendingPhotos(manifest) {
+      const { state } = await snapshot(true), recovery = state.recovery;
+      if (!recovery?.pendingPhotos || manifest.albumId !== state.album.share_id) throw new Problem(422, "Recovery manifest does not match this album.");
+      const photoIds = [...new Set(manifest.objects.map(o => o.photoId))], accepted = [];
+      for (const id of photoIds) {
+        const pending = recovery.pendingPhotos.find(p => p.photo.id === id);
+        if (!pending) { if (state.uploaded.includes(id)) continue; throw new Problem(422, "Photo is not pending recovery."); }
+        let size = 0;
+        for (const variant of ["source", "thumb", "full"]) {
+          const entries = manifest.objects.filter(o => o.photoId === id && o.variant === variant), expected = mediaKey(prefix, state.album, id, variant);
+          if (entries.length !== 1 || entries[0].key !== expected || entries[0].status !== "verified") throw new Problem(422, "Recovery media has not been verified.");
+          const entry = entries[0], bytes = await readBytes(await objects.read(expected));
+          if (!bytes || sha256(bytes) !== entry.sha256 || bytes.length !== entry.size) throw new Problem(422, "Recovery object integrity failed.");
+          if (variant !== "source" && !recovery.variantManifest.images.some(r => r.photoId === id && r.variant === variant && r.sha256 === entry.sha256)) throw new Problem(422, "Recovered image does not match historical production.");
+          size += bytes.length;
+        }
+        accepted.push({ pending, size });
+      }
+      return change(current => {
+        if (current.album.revision !== state.album.revision) throw new Problem(409, "The draft changed. Review and retry recovery.");
+        const draft = JSON.parse(current.album.draft);
+        for (const { pending, size } of accepted) {
+          const roll = draft.rolls.find(r => r.id === pending.rollId);
+          if (!roll || draft.rolls.some(r => r.photos.some(p => p.id === pending.photo.id))) throw new Problem(409, "Recovered photo conflicts with the current draft.");
+          if ((current.album.storageBytes ?? 0) + size > maxAlbumBytes) throw new Problem(422, "This album has reached its storage limit.");
+          roll.photos.push(structuredClone(pending.photo)); current.uploaded.push(pending.photo.id);
+          current.album.storageBytes = (current.album.storageBytes ?? 0) + size;
+        }
+        if (accepted.length) {
+          current.album.draft = JSON.stringify(draft); current.album.revision++; current.album.updatedAt = new Date().toISOString();
+          const restored = new Set(accepted.map(a => a.pending.photo.id));
+          current.recovery.pendingPhotos = current.recovery.pendingPhotos.filter(p => !restored.has(p.photo.id));
+        }
+        return { restoredToDraft: accepted.length, pending: current.recovery.pendingPhotos.length, publicationChanged: false };
+      });
+    },
     async verifyExisting(id) { const { state } = await snapshot(true); const row = findAlbum(state, id); const auth = (await authRead()).value;
       if (!row.published || !(auth.owner || process.env.OWNER_PASSWORD?.length >= 12)) throw new Problem(503, "Production album protection is not configured.");
       return { albumId: id, publishedPhotos: JSON.parse(row.published).rolls.reduce((n, r) => n + r.photos.length, 0), deepAudit: false }; },
