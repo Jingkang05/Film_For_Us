@@ -101,6 +101,7 @@ test("private uploads, revision checks, and published snapshots survive restart"
   const preEdit = draft.revision;
   const letter = "Dear you,\n\n这是一封用来测试发布流程的信。";
   draft.album.letter = letter;
+  draft.album.shareSlug = " Our-Story ";
   for (const [index, roll] of draft.album.rolls.entries()) {
     roll.name = `胶卷 ${index + 1}`;
     for (const photo of roll.photos) {
@@ -111,11 +112,21 @@ test("private uploads, revision checks, and published snapshots survive restart"
   draft.album.rolls[1].photos.unshift(moved);
   delete firstPhoto.note;
   draft = await post("save", { revision: preEdit, album: draft.album });
+  assert.equal(draft.album.shareSlug, "our-story");
+  assert.equal(draft.shareSlug, "");
+  assert.equal((await request("/api/a/our-story", { auth: false })).status, 404);
   assert.equal(draft.album.rolls[1].photos[0].id, moved.id);
   await post("save", { revision: preEdit, album: draft.album }, 409);
   await post("publish", { revision: preEdit }, 409);
   assert.equal((await request(share)).status, 404);
   const publish = await post("publish", { revision: draft.revision });
+  assert.equal(publish.shareSlug, "our-story");
+  assert.equal((await request("/a/our-story", { auth: false })).status, 200);
+  assert.equal((await request("/api/a/our-story", { auth: false })).status, 200);
+  assert.equal((await request("/api/a/not-this-album", { auth: false })).status, 404);
+  for (const shareSlug of ["../manage", "our/story", "-story", "story?x=1", "a".repeat(81), "<script>", "我们的回忆", "café"]) {
+    await post("save", { revision: draft.revision, album: { ...draft.album, shareSlug } }, 422);
+  }
   assert.deepEqual(await post("publish", { revision: draft.revision }), publish);
 
   const publicAlbum = await (await request(share, { auth: false })).json();
@@ -140,12 +151,31 @@ test("private uploads, revision checks, and published snapshots survive restart"
   assert.equal((await request(publishedPhoto.full, { auth: false })).status, 200);
   draft.album.rolls[0].photos[0].date = "2026-11-06";
   draft.album.rolls[0].photos[0].note = "修订后的测试留言。";
+  draft.album.shareSlug = "our-memories";
   draft = await post("save", { revision: draft.revision, album: draft.album });
+  assert.equal(draft.shareSlug, "our-story");
+  assert.equal((await request(`/api/a/${encodeURIComponent("our-memories")}`, { auth: false })).status, 404);
   await post("publish", { revision: draft.revision });
   assert.equal((await request(publishedPhoto.full, { auth: false })).status, 404);
   const latest = await (await request(share, { auth: false })).json();
   assert.equal(latest.rolls[0].photos[0].note, "修订后的测试留言。");
   assert.equal(latest.rolls.flatMap((roll) => roll.photos).length, 17);
+  assert.equal((await request("/api/a/our-story", { auth: false })).status, 200);
+  const renamedLink = `/api/a/${encodeURIComponent("our-memories")}`;
+  assert.equal((await request(renamedLink, { auth: false })).status, 200);
+  assert.equal((await request(`/a/${encodeURIComponent("our-memories")}`, { auth: false })).status, 200);
+  assert.equal((await request(`/api/a/our-story/media/${latest.rolls[0].photos[0].id}/full`, { auth: false })).status, 200);
+  assert.equal(latest.shareAliases, undefined);
+
+  draft.album.shareSlug = "";
+  draft = await post("save", { revision: draft.revision, album: draft.album });
+  const reset = await post("publish", { revision: draft.revision });
+  assert.equal(reset.shareSlug, "");
+  await stop();
+  await start();
+  for (const link of [share, "/api/a/our-story", renamedLink]) {
+    assert.equal((await request(link, { auth: false })).status, 200, link);
+  }
 
   await post("logout", {});
   assert.equal((await request("/api/manage")).status, 401);

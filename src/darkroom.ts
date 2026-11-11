@@ -110,7 +110,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
       ${envelopeObject(open, copy)}
       ${open ? `<article class="letter-paper">
         <span class="letter-index">FILM FOR US <span>1 / 1</span></span>
-        <div class="letter-reading" tabindex="0">
+        <div class="letter-reading">
           ${copy}
           <button type="button" class="paper-action" data-action="table">${ui("enterDarkroom")} ${icon("right")}</button>
         </div>
@@ -148,7 +148,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
       ], { duration: envelopeMotion.transition, easing: envelopeMotion.easing, fill: "both" });
     };
     paper.inert = true;
-    const animations = [animateFrom(paper, origin.paper, "rotate(2deg)", true),
+    const animations = [animateFrom(paper, origin.paper, "none", true),
       animateFrom(envelope, origin.envelope, getComputedStyle(envelope).transform, false)];
     const finish = () => {
       if (events.signal.aborted) return;

@@ -52,6 +52,10 @@ Open the envelope, choose **Enter the darkroom**, then select the brown camera r
 
 Use Node.js 24 and connect a **private** Vercel Blob store to the project. Configure `APP_ORIGIN` with the production HTTPS origin, without a trailing slash. Vercel serves the compiled files in `public` and routes the API to the Node.js function in `api`.
 
+The production editor is [filmforus.space/manage](https://filmforus.space/manage), with `APP_ORIGIN=https://filmforus.space`. The editor generates share links from its current origin. When changing domains, update `APP_ORIGIN`, redeploy so the API uses the new value, and redirect the old domain to the new one while preserving paths and query strings. The project routing rules redirect `film-for-us-jk.vercel.app` to `filmforus.space`.
+
+In the album editor, **Sharing address** lets the owner edit the `/a/` suffix or choose **Use album title** to generate it from the English letters and numbers in the current title. Titles without English letters or numbers require a manually entered suffix. Suffixes accept up to 80 ASCII English letters, numbers, and internal hyphens or underscores; they are normalized to lowercase. Saving keeps the address in the draft, and publishing activates it and updates the copyable share link. Renaming the title alone does not change a published address. Clearing the suffix restores the generated ID as the main address. All previously published suffixes and the immutable album ID continue to open the latest published album, including its photos. Alias history is stored in the published snapshot in both SQLite and private Blob storage; existing albums need no data migration.
+
 For a new album, configure an `OWNER_PASSWORD` of at least 12 characters. To bring over a local SQLite album, run the migration before serving traffic, with the new store's `BLOB_READ_WRITE_TOKEN` available in your shell environment.
 
 ```sh

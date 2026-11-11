@@ -2,6 +2,7 @@ import { ui, uiAttr, setUIText, errorKey, t, refreshUI } from "./ui-language.js"
 import { api, app, escapeHTML as esc, icon, postJSON, RequestError, showMessage,
   type ManageData, type Roll } from "./common.js";
 import { setChineseTypography } from "./typography.js";
+import { normalizeShareSlug, validShareSlug, shareSlugFromTitle } from "./share-link.js";
 
 type Upload = {
   id: string;
@@ -119,7 +120,7 @@ function editor(initial: ManageData) {
   }
 
   function render() {
-    const share = `${location.origin}/a/${data.shareId}`;
+    const share = `${location.origin}/a/${encodeURIComponent(data.shareSlug || data.shareId)}`;
     const published = data.publishedRevision !== null;
     app.innerHTML = `<section class="owner">
       <header class="owner-heading"><div><a href="/demo" class="owner-brand">Film <i>for us</i></a><h1>${ui("albumEditor")}</h1></div>
@@ -137,6 +138,17 @@ function editor(initial: ManageData) {
         <label>${ui("albumTitle")}<input name="title" value="${esc(data.album.title)}" maxlength="80"></label>
         <label>${ui("yourLetter")}<textarea name="letter" dir="auto" rows="6" maxlength="2000" ${uiAttr("letterPlaceholder", {}, "placeholder")}>${esc(data.album.letter)}</textarea></label>
       </section>
+      <section class="owner-section owner-link" aria-labelledby="link-heading">
+        <h2 id="link-heading">${ui("customLink")}</h2>
+        <div class="slug-controls">
+          <label for="share-slug">${ui("urlSuffix")}<span class="slug-input"><span aria-hidden="true">/a/</span><input id="share-slug" name="share-slug" dir="ltr" type="text" maxlength="80" value="${esc(data.album.shareSlug ?? "")}" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="slug-help slug-error" aria-invalid="false"></span></label>
+          <button type="button" class="text-button" data-action="slug-title">${ui("useAlbumTitle")}</button>
+        </div>
+        <p id="slug-help" class="owner-empty">${ui("slugHelp")}</p>
+        <p id="slug-error" class="slug-error owner-feedback--error" aria-live="polite"></p>
+        <p class="slug-preview"><span>${ui("linkAfterPublish")}</span><span id="slug-preview" dir="ltr"></span></p>
+        <p class="owner-empty">${ui("slugPublishHint")}</p>
+      </section>
       ${uploadModule()}
       <section class="owner-section owner-rolls"><h2>${ui("rollsPhotos")}</h2>
         ${data.album.rolls.map(rollFields).join("")}
@@ -146,6 +158,7 @@ function editor(initial: ManageData) {
       setChineseTypography(field, field.value);
     });
     refreshUI(app);
+    updateLinkPreview();
     if (busy) lockControls();
   }
 
@@ -156,6 +169,19 @@ function editor(initial: ManageData) {
   function markDirty() {
     dirty = true;
     setUIText(app.querySelector("#revision-status")!, "unsaved");
+  }
+
+  function updateLinkPreview() {
+    const value = data.album.shareSlug ?? "";
+    const valid = validShareSlug(value);
+    app.querySelector("#share-slug")?.setAttribute("aria-invalid", String(!valid));
+    const error = app.querySelector("#slug-error");
+    if (error) {
+      if (valid) { error.removeAttribute("data-ui"); error.textContent = ""; }
+      else setUIText(error, "slugInvalid");
+    }
+    const preview = app.querySelector("#slug-preview");
+    if (preview) preview.textContent = valid ? `${location.origin}/a/${normalizeShareSlug(value) || data.shareId}` : "";
   }
 
   function photoLocation(id: string) {
@@ -169,7 +195,10 @@ function editor(initial: ManageData) {
     const input = event.target as HTMLInputElement | HTMLTextAreaElement;
     setChineseTypography(input, input.value);
     if (input.name === "title" || input.name === "letter") data.album[input.name] = input.value;
-    else if (input.name === "roll-name" || input.name === "roll-color") {
+    else if (input.name === "share-slug") {
+      data.album.shareSlug = input.value;
+      updateLinkPreview();
+    } else if (input.name === "roll-name" || input.name === "roll-color") {
       const roll = data.album.rolls.find((item) => item.id === input.dataset.roll)!;
       roll[input.name === "roll-name" ? "name" : "color"] = input.value;
     } else if (input.name === "date" || input.name === "note") {
@@ -181,6 +210,7 @@ function editor(initial: ManageData) {
 
   async function save() {
     if (!dirty) return;
+    if (!validShareSlug(data.album.shareSlug ?? "")) throw new Error("Use up to 80 English letters, numbers, hyphens or underscores for the URL suffix.");
     data = await postJSON<ManageData>("/api/manage/save", { revision: data.revision, album: data.album });
     dirty = false;
   }
@@ -282,6 +312,16 @@ function editor(initial: ManageData) {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-action]");
     if (!button || busy) return;
     const { action, id } = button.dataset;
+    if (action === "slug-title") {
+      const slug = shareSlugFromTitle(data.album.title);
+      if (!slug) { notice(ui("slugTitleEmpty"), true); return; }
+      data.album.shareSlug = slug;
+      const field = app.querySelector<HTMLInputElement>("#share-slug")!;
+      field.value = slug;
+      markDirty();
+      updateLinkPreview();
+      field.focus();
+    }
     if (action === "save") void run(async () => { await save(); notice(ui("draftSaved")); });
     if (action === "preview") void run(async () => { await save(); location.assign("/manage/preview"); });
     if (action === "publish") void run(async () => {
