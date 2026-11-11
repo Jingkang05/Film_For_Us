@@ -1,5 +1,6 @@
+import type { MemoryProject, MemoryRoll as Roll } from "./memory-project.js";
 import { ui, uiAttr, setUIText, setUIAttr } from "./ui-language.js";
-import { announce, announceUI, app, count, dialog, escapeHTML as esc, icon, type Album, type Photo, type Roll } from "./common.js";
+import { announce, announceUI, app, count, dialog, escapeHTML as esc, icon, type Photo } from "./common.js";
 import { chineseAttributes } from "./typography.js";
 import { createFilmAudio } from "./mechanical-audio.js";
 import { instantCamera } from "./polaroid-config.js";
@@ -28,11 +29,11 @@ const photoAspect = (image: HTMLImageElement) => image.naturalWidth / image.natu
 const heartBadge = (selected: boolean) =>
   `<span class="frame-heart" aria-hidden="true"${selected ? "" : " hidden"}>${icon("heart")}</span>`;
 
-export function mountDarkroom(album: Album, preview: boolean) {
+export function mountDarkroom(album: MemoryProject, preview: boolean) {
   const photos = new Map(album.rolls.flatMap((roll) => roll.photos.map((photo) => [photo.id, photo] as const)));
   const revealedPhotos = new Set<string>();
   const filmAudio = createFilmAudio();
-  const musicControl = mountSoundtrack(app);
+  const musicControl = mountSoundtrack(app, album.settings.music);
   const restoredLikes = loadViewerLikes(album.id, photos.keys(), preview);
   const readyPrints = new Set(restoredLikes);
   let state = { ...fresh(), selected: restoredLikes };
@@ -66,7 +67,8 @@ export function mountDarkroom(album: Album, preview: boolean) {
   }
 
   function activeRoll() { return album.rolls.find((item) => item.id === state.roll); }
-  function usesViewer(roll: Roll) { return album.rolls[1] === roll; }
+  function instantRoll() { return album.rolls.find(roll => roll.presentation === "instant"); }
+  function usesViewer(roll: Roll) { return roll.presentation === "viewer"; }
   function currentPhoto() {
     const id = (state.queue.length ? state.queue : state.selected).find((item) => !state.hung.includes(item));
     return id ? photos.get(id) : undefined;
@@ -109,9 +111,9 @@ export function mountDarkroom(album: Album, preview: boolean) {
   }
 
   function envelope(open: boolean) {
-    const copy = `<div class="letter-copy" dir="auto" ${chineseAttributes(album.letter)}>${album.letter ? esc(album.letter) : ui("letterEmpty")}</div>`;
+    const copy = `<div class="letter-copy" dir="auto" ${chineseAttributes(album.envelope.message)}>${album.envelope.message ? esc(album.envelope.message) : ui("letterEmpty")}</div>`;
     return `<div class="letter-set ${open ? "letter-set--open" : ""}">
-      ${envelopeObject(open, copy)}
+      ${envelopeObject(open, copy, album.settings.sealMotif)}
       ${open ? `<article class="letter-paper">
         <span class="letter-index">FILM FOR US <span>1 / 1</span></span>
         <div class="letter-reading">
@@ -174,7 +176,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
   function table() {
     const title = album.title && !["Roll for us", "Film for us"].includes(album.title) ? esc(album.title) : "Film <i>for us</i>";
     return `<div class="table-heading"><h1 tabindex="-1" dir="auto" ${chineseAttributes(album.title)}>${title}</h1></div>
-      <div class="rolls">${album.rolls.map((roll, index) => index === 2
+      <div class="rolls">${album.rolls.map((roll, index) => roll.presentation === "instant"
         ? `<button type="button" class="roll roll--3 roll--instant" data-action="instant"
             ${uiAttr(roll.photos.length === 1 ? "instantPhoto" : "instantPhotos", { count: roll.photos.length })} ${roll.photos.length ? "" : "disabled"}>
             <span class="instant-entry-object" aria-hidden="true"><img src="${instantCamera.tableSrc}" width="${instantCamera.width}" height="${instantCamera.height}" alt=""></span>
@@ -355,7 +357,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
   }
 
   function openRoll(button: HTMLButtonElement, id: string) {
-    if (id === album.rolls[0]?.id) filmAudio.prepare();
+    if (album.rolls.find(roll => roll.id === id)?.presentation === "strip") filmAudio.prepare();
     const roll = button.querySelector<HTMLElement>(".canister")!;
     const before = motionAllowed() ? {
       bounds: roll.getBoundingClientRect(),
@@ -604,11 +606,11 @@ export function mountDarkroom(album: Album, preview: boolean) {
       unmountInstant = mountPolaroid(app, roll.photos, () => {
         switchScene("table");
         app.querySelector<HTMLButtonElement>(".roll--instant")?.focus({ preventScroll: true });
-      });
+      }, album.ending.instantCaption);
       app.querySelector(".instant-bar")!.append(musicControl);
       return;
     }
-    if (scene === "table" && album.rolls[2]?.photos.length && !preloadedInstant) {
+    if (scene === "table" && instantRoll()?.photos.length && !preloadedInstant) {
       preloadedInstant = new Image();
       preloadedInstant.src = instantCamera.src;
       void preloadedInstant.decode().catch(() => {});
@@ -951,7 +953,7 @@ export function mountDarkroom(album: Album, preview: boolean) {
     if (action === "unseal") void envelopeOpening?.open();
     if (action === "table") enterTable();
     if (action === "roll" && id) openRoll(button, id);
-    if (action === "instant" && album.rolls[2]?.photos.length) openInstant(button, album.rolls[2].id);
+    if (action === "instant" && instantRoll()?.photos.length) openInstant(button, instantRoll()!.id);
     if (action === "advance-viewer" || action === "retry-viewer" || action === "mark-viewer") {
       const roll = activeRoll()!;
       if (action === "advance-viewer") {

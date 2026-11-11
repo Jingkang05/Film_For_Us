@@ -11,7 +11,8 @@
     "check": "tsc --noEmit && node --check server/index.mjs && node --check server/album.mjs && node --check server/blob-album.mjs && node --check 'api/[...route].mjs'",
     "dev": "tsc && node --env-file-if-exists=.env server/index.mjs",
     "start": "node --env-file-if-exists=.env server/index.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "preview:templates": "tsc && node scripts/preview-memory-projects.mjs"
   },
   "dependencies": {
     "@vercel/blob": "2.8.2",

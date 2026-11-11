@@ -1,5 +1,6 @@
+import { toMemoryProject } from "./memory-project.js";
 import { mountLanguageSwitcher, ui } from "./ui-language.js";
-import { api, app, type Album, RequestError, showMessage } from "./common.js";
+import { api, app, RequestError, showMessage } from "./common.js";
 
 mountLanguageSwitcher();
 
@@ -18,7 +19,7 @@ async function start() {
     return;
   }
   try {
-    const album = await api<Album>(source);
+    const album = toMemoryProject(await api<unknown>(source));
     const { mountDarkroom } = await import("./darkroom.js");
     mountDarkroom(album, source === "/api/preview");
   } catch (error) {
