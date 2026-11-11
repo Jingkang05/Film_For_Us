@@ -68,7 +68,9 @@ You can pass a SQLite path as the first argument. The migration keeps the share 
 
 Open `/editor` (or the existing `/manage`) to manage independent albums. Create a draft, edit it at `/editor/:albumId`, preview it privately, then publish to its own `/a/:albumId` URL. The library includes unpublishing and exact-ID deletion confirmation. The original album and published suffixes remain valid.
 
-Production reuses the existing private Blob store with verified immutable backups and conditional writes. No new database, billing activation, or secret is required. A production build verifies the original album, media references, administrator protection and backup before release. See [Phase 3 architecture, recovery, security and verification](docs/multi-album-editor-phase-3.md). Do not run the import script against an existing production store.
+Production currently uses private Blob with conditional writes. The R2 migration branch adds private S3-compatible storage, separate auth/control documents, immutable snapshots, resumable copy/verification and recovery tooling; provider selection defaults to Blob until complete recovery is verified. Routine builds no longer access storage. An explicit `STORAGE_PREFLIGHT=metadata` checks metadata without an asset HEAD scan or backup writes; deep storage audits must be separately requested and budgeted. See [R2 recovery status and cutover gates](docs/r2-recovery-status.md) and [Phase 3 history](docs/multi-album-editor-phase-3.md). Do not run the import script against an existing production store.
+
+For an isolated R2 repository preview, build and run `node scripts/preview-r2.mjs`; it uses only public sample images in an in-memory object store. `pnpm audit:storage` runs synthetic Blob call-count assertions with network access disabled. Private recovery output belongs in ignored `.data/`; never commit it. Migration commands and live checks require explicit server environment configuration and do not run automatically during builds.
 
 For isolated browser QA with sample photos only, build and run `node scripts/preview-multi-album.mjs`. It uses a disposable temporary database.
 
