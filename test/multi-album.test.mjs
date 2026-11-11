@@ -79,10 +79,15 @@ test("multiple albums: owner gates, independent edits/uploads, versioned replace
   assert.deepEqual(Buffer.from(await (await request(publicPhoto.full, undefined, false)).arrayBuffer()), beforeBytes);
   assert.notDeepEqual(Buffer.from(await (await request(a.album.rolls[0].photos[0].full)).arrayBuffer()), beforeBytes);
   b.album.letter = "A second independent generic memory";
-  for (const roll of b.album.rolls) { roll.name = roll.id; for (const photo of roll.photos) photo.date = "2026-11-11"; }
+  for (const roll of b.album.rolls) roll.name = roll.id;
   b = await json(route(b, "save"), { revision: b.revision, album: b.album });
   b = await json(route(b, "publish"), { revision: b.revision });
-  assert.equal((await json(`/api/a/${b.shareId}`)).title, "Album B");
+  const publicB = await json(`/api/a/${b.shareId}`);
+  assert.equal(publicB.title, "Album B");
+  assert.ok(publicB.rolls.flatMap(roll => roll.photos).every(photo => photo.date === ""));
+  const invalidDate = structuredClone(b.album);
+  invalidDate.rolls[0].photos[0].date = "2026-02-30";
+  await json(route(b, "save"), { revision: b.revision, album: invalidDate }, 422);
   const priorRevision = a.revision;
   a = await json(route(a, "publish"), { revision: a.revision });
   assert.notDeepEqual(Buffer.from(await (await request(publicPhoto.full, undefined, false)).arrayBuffer()), beforeBytes);
