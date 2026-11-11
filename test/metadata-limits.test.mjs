@@ -1,0 +1,43 @@
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { DatabaseSync } from "node:sqlite";
+import { once } from "node:events";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test from "node:test";
+import { openAlbum } from "../server/album.mjs";
+import { createApp } from "../server/index.mjs";
+
+test("a supported 500-photo album with maximum-length multibyte notes saves and reloads", async t => {
+  const directory = await mkdtemp(join(tmpdir(), "film-metadata-")), dbPath = join(directory, "album.sqlite");
+  const origin = "http://127.0.0.1", password = randomUUID();
+  const data = openAlbum(dbPath); const initial = await data.manage(); data.close();
+  // Seed metadata only; this test does not publish or pretend these are uploaded images.
+  const db = new DatabaseSync(dbPath);
+  const state = JSON.parse(db.prepare("SELECT state FROM album_collection").get().state);
+  const content = JSON.parse(state.album.draft);
+  for (let i = 0; i < 500; i++) content.rolls[i % 3].photos.push({ id: randomUUID(), note: "", date: "" });
+  state.album.draft = JSON.stringify(content);
+  db.prepare("UPDATE album_collection SET state = ?").run(JSON.stringify(state)); db.close();
+  const server = createApp({ dbPath, origin, password }); server.listen(0, "127.0.0.1"); await once(server, "listening");
+  t.after(async () => { await new Promise(resolve => server.close(resolve)); await rm(directory, { recursive: true, force: true }); });
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie;
+  const request = (path, value) => fetch(base + path, { method: value ? "POST" : "GET", headers: { ...(cookie ? { Cookie: cookie } : {}), ...(value ? { Origin: origin, "Content-Type": "application/json" } : {}) }, body: value ? JSON.stringify(value) : undefined });
+  const login = await request("/api/manage/login", { password }); assert.equal(login.status, 200);
+  cookie = login.headers.get("set-cookie").split(";")[0];
+  const loaded = await (await request(`/api/editor/${initial.shareId}`)).json();
+  for (const roll of loaded.album.rolls) for (const photo of roll.photos) photo.note = "雪".repeat(600);
+  const payload = { revision: loaded.revision, album: loaded.album };
+  assert.ok(Buffer.byteLength(JSON.stringify(payload)) > 512 * 1024);
+  const saved = await request(`/api/editor/${initial.shareId}/save`, payload);
+  assert.equal(saved.status, 200); const result = await saved.json();
+  assert.equal(result.album.rolls.flatMap(roll => roll.photos).length, 500);
+  assert.equal(result.album.rolls[0].photos[0].note, "雪".repeat(600));
+  const reloaded = await (await request(`/api/editor/${initial.shareId}`)).json();
+  assert.deepEqual(reloaded, result);
+  const oversized = await request(`/api/editor/${initial.shareId}/save`, { padding: "x".repeat(2 * 1024 * 1024) });
+  assert.equal(oversized.status, 413);
+  assert.equal((await oversized.json()).error, "The album data exceeds the 2 MB save limit.");
+});

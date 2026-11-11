@@ -112,3 +112,21 @@
   .owner-photo { grid-template-columns: 1fr; }
   .owner-photo img { width: 110px; }
 }
+
+.album-create { display: flex; align-items: end; flex-wrap: wrap; gap: 1rem; }
+.album-create label { flex: 1 1 16rem; }
+.album-row { padding: 1.5rem 0; border-bottom: 1px solid #674236; }
+.album-summary h2 { overflow-wrap: anywhere; }
+.album-summary h2 a { color: var(--light); text-decoration-thickness: 1px; text-underline-offset: .2em; }
+.album-summary p { color: #dbba91; font-size: .9rem; margin: .5rem 0 1rem; }
+.album-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem 1.2rem; }
+.owner .danger-action { color: #ffa18d; }
+.album-delete-dialog { width: min(90vw, 480px); padding: 1.5rem; background: #281511; color: var(--light); border: 1px solid #8a5f4c; }
+.album-delete-dialog h2 { font: 400 1.8rem var(--serif); }
+.album-delete-dialog form, .album-delete-dialog label { display: grid; gap: .8rem; }
+.album-delete-dialog input { width: 100%; min-height: 44px; padding: .6rem; color: var(--light); background: #20120e; border: 1px solid #8a5f4c; }
+.album-id { overflow-wrap: anywhere; user-select: all; }
+.owner .replace-photo { display: grid; max-width: 15rem; gap: .3rem; }
+.owner .replace-photo input { max-width: 100%; font-size: .8rem; }
+.album-library a:focus-visible, .album-delete-dialog :focus-visible { outline: 2px solid #f2c298; outline-offset: 4px; }
+.album-library ::selection, .album-delete-dialog ::selection { background: #e5c39c; color: #20120e; }

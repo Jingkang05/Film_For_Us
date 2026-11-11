@@ -625,7 +625,7 @@ export function mountDarkroom(album: MemoryProject, preview: boolean) {
     const status = step === 1 ? "1 / 1" : step === 2 ? `${count(album.rolls.length)} ENTRIES · ${count(total)} PHOTOS`
       : `${state.hung.length} OF ${target} DRY`;
     const ownerLink = preview
-      ? `<a class="text-button preview-link" href="/manage">${ui("editorBack")}</a>`
+      ? `<a class="text-button preview-link" href="/editor/${encodeURIComponent(album.id)}">${ui("editorBack")}</a>`
       : album.demo ? `<a class="text-button preview-link" href="/manage#upload">${ui("uploadPhotos")}</a>` : "";
     const hint = {
       envelope: ui("openEnvelope"),

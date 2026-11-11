@@ -7,12 +7,13 @@
     "node": "24.x"
   },
   "scripts": {
-    "build": "tsc",
-    "check": "tsc --noEmit && node --check server/index.mjs && node --check server/album.mjs && node --check server/blob-album.mjs && node --check 'api/[...route].mjs'",
+    "build": "tsc && node scripts/verify-production-storage.mjs",
+    "check": "tsc --noEmit && node --check server/index.mjs && node --check server/album.mjs && node --check server/blob-album.mjs && node --check 'api/[...route].mjs' && node --check server/collection.mjs && node --check scripts/verify-production-storage.mjs && node --check scripts/migrate-to-vercel.mjs && node --check scripts/verify-public-album.mjs && node --check scripts/preview-multi-album.mjs",
     "dev": "tsc && node --env-file-if-exists=.env server/index.mjs",
     "start": "node --env-file-if-exists=.env server/index.mjs",
     "test": "node --test",
-    "preview:templates": "tsc && node scripts/preview-memory-projects.mjs"
+    "preview:templates": "tsc && node scripts/preview-memory-projects.mjs",
+    "preview:albums": "tsc && node scripts/preview-multi-album.mjs"
   },
   "dependencies": {
     "@vercel/blob": "2.8.2",

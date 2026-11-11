@@ -64,6 +64,14 @@ node scripts/migrate-to-vercel.mjs
 
 You can pass a SQLite path as the first argument. The migration keeps the share ID, draft, published version, original photos, display images, and any password set through the local editor. Sign in again on the production domain. The local and hosted albums are separate after the import.
 
+## Multi-album editor (Phase 3)
+
+Open `/editor` (or the existing `/manage`) to manage independent albums. Create a draft, edit it at `/editor/:albumId`, preview it privately, then publish to its own `/a/:albumId` URL. The library includes unpublishing and exact-ID deletion confirmation. The original album and published suffixes remain valid.
+
+Production reuses the existing private Blob store with verified immutable backups and conditional writes. No new database, billing activation, or secret is required. A production build verifies the original album, media references, administrator protection and backup before release. See [Phase 3 architecture, recovery, security and verification](docs/multi-album-editor-phase-3.md). Do not run the import script against an existing production store.
+
+For isolated browser QA with sample photos only, build and run `node scripts/preview-multi-album.mjs`. It uses a disposable temporary database.
+
 ## Verify
 
 ```sh

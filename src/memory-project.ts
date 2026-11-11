@@ -3,7 +3,7 @@ import { templateDefaults } from "./template-config.js";
 // Existing editor/API contract. Kept unchanged at the storage boundary.
 export interface Photo { id: string; date: string; note: string; thumb: string; full: string }
 export interface Roll { id: string; name: string; color: string; photos: Photo[] }
-export interface Album { id: string; title: string; shareSlug?: string; letter: string; rolls: Roll[]; demo?: boolean }
+export interface Album { id: string; title: string; shareSlug?: string; letter: string; rolls: Roll[]; demo?: boolean; description?: string; createdAt?: string; updatedAt?: string; ending?: MemoryProject["ending"]; settings?: MemoryProject["settings"] }
 export type RollPresentation = "strip" | "viewer" | "instant";
 export interface MemoryRoll extends Roll { presentation: RollPresentation }
 export interface MemoryProject {
@@ -60,13 +60,13 @@ export function toMemoryProject(input: unknown): MemoryProject {
       return { id, date: text(photo.date ?? ""), note: text(photo.note ?? ""), thumb: media(photo.thumb), full: media(photo.full) };
     }) };
   });
-  const settings = modern ? object(source.settings) : defaults.settings;
+  const settings = modern || source.settings !== undefined ? object(source.settings) : defaults.settings;
   const music = object(settings.music);
   if (settings.sealMotif !== "rose" && settings.sealMotif !== "branch") throw invalid();
   const project: MemoryProject = {
     schemaVersion: 1, templateId: "film-darkroom-v1", id: text(source.id, true), title: text(source.title),
     envelope: { message: text(modern ? object(source.envelope).message : source.letter) }, rolls,
-    ending: { instantCaption: text(modern ? object(source.ending).instantCaption : defaults.ending.instantCaption) },
+    ending: { instantCaption: text(modern || source.ending !== undefined ? object(source.ending).instantCaption : defaults.ending.instantCaption) },
     settings: { sealMotif: settings.sealMotif, music: { title: text(music.title), src: media(music.src) } },
   };
   if (source.demo !== undefined) {
@@ -81,4 +81,17 @@ export function toMemoryProject(input: unknown): MemoryProject {
     project[key] = value;
   }
   return project;
+}
+
+/** The editor and server keep the legacy letter/share contract while serializing the shared model. */
+export function serializeMemoryProject(project: MemoryProject, shareSlug = ""): Album {
+  const validated = toMemoryProject(project);
+  return {
+    id: validated.id, title: validated.title, shareSlug, letter: validated.envelope.message,
+    rolls: validated.rolls.map(({ presentation, ...roll }) => roll),
+    ...(validated.description !== undefined ? { description: validated.description } : {}),
+    ...(validated.createdAt !== undefined ? { createdAt: validated.createdAt } : {}),
+    ...(validated.updatedAt !== undefined ? { updatedAt: validated.updatedAt } : {}),
+    ending: validated.ending, settings: validated.settings,
+  };
 }

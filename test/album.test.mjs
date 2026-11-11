@@ -120,6 +120,7 @@ test("private uploads, revision checks, and published snapshots survive restart"
   await post("publish", { revision: preEdit }, 409);
   assert.equal((await request(share)).status, 404);
   const publish = await post("publish", { revision: draft.revision });
+  draft = publish;
   assert.equal(publish.shareSlug, "our-story");
   assert.equal((await request("/a/our-story", { auth: false })).status, 200);
   assert.equal((await request("/api/a/our-story", { auth: false })).status, 200);
@@ -155,7 +156,7 @@ test("private uploads, revision checks, and published snapshots survive restart"
   draft = await post("save", { revision: draft.revision, album: draft.album });
   assert.equal(draft.shareSlug, "our-story");
   assert.equal((await request(`/api/a/${encodeURIComponent("our-memories")}`, { auth: false })).status, 404);
-  await post("publish", { revision: draft.revision });
+  draft = await post("publish", { revision: draft.revision });
   assert.equal((await request(publishedPhoto.full, { auth: false })).status, 404);
   const latest = await (await request(share, { auth: false })).json();
   assert.equal(latest.rolls[0].photos[0].note, "修订后的测试留言。");
