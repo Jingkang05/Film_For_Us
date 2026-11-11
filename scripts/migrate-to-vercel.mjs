@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { get, put } from "@vercel/blob";
+import { validateState } from "../server/collection.mjs";
 import { albumStatePath, createState, photoPath } from "../server/blob-album.mjs";
 
 const prefix = "roll-for-us";
@@ -23,21 +24,29 @@ try {
   if (await get(path, { access, useCache: false })) {
     throw new Error("The cloud album already exists. Import stopped before copying any files.");
   }
+  const collection = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'album_collection'").get();
   db.exec("BEGIN");
-  const album = db.prepare("SELECT share_id, revision, draft, published_revision, published FROM album WHERE id = 1").get();
+  const savedCollection = collection ? JSON.parse(db.prepare("SELECT state FROM album_collection WHERE id = 1").get().state) : null;
+  const album = savedCollection?.album ?? db.prepare("SELECT share_id, revision, draft, published_revision, published FROM album WHERE id = 1").get();
   if (!album) throw new Error("The local database has no album.");
-  const owner = db.prepare("SELECT salt, password_hash FROM local_owner WHERE id = 1").get();
+  const owner = savedCollection?.owner ?? db.prepare("SELECT salt, password_hash FROM local_owner WHERE id = 1").get();
   const ids = [];
   for (const { id, source, thumb, full } of db.prepare("SELECT id, source, thumb, full FROM media ORDER BY id").iterate()) {
+    const [albumId, assetId] = id.includes("/") ? id.split("/") : [null, id];
+    if (albumId && !savedCollection?.albums?.some(row => row.share_id === albumId)) throw new Error("Unknown media ownership. Import stopped.");
+    const targetPrefix = albumId ? `${prefix}/albums/${albumId}` : prefix;
     await Promise.all([
-      copy(photoPath(prefix, id, "source"), source, "application/octet-stream"),
-      copy(photoPath(prefix, id, "thumb"), thumb, "image/webp"),
-      copy(photoPath(prefix, id, "full"), full, "image/webp"),
+      copy(photoPath(targetPrefix, assetId, "source"), source, "application/octet-stream"),
+      copy(photoPath(targetPrefix, assetId, "thumb"), thumb, "image/webp"),
+      copy(photoPath(targetPrefix, assetId, "full"), full, "image/webp"),
     ]);
     ids.push(id);
     console.log(`Copied photo ${ids.length}`);
   }
-  await put(path, JSON.stringify(createState(album, owner, ids)), { access, contentType: "application/json" });
+  const state = savedCollection ?? createState(album, owner, ids);
+  state.sessions = {}; state.attempts = {}; delete state.uploadAttempts;
+  validateState(state);
+  await put(path, JSON.stringify(state), { access, contentType: "application/json" });
   console.log(`Imported ${ids.length} photos and album revision ${album.revision} (published revision ${album.published_revision}).`);
 } finally {
   db.close();

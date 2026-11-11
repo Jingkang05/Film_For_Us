@@ -22,14 +22,14 @@ const photoIdPattern = new RegExp(`^${photoId}$`);
 const shareId = "[^/]+";
 const publishedRoute = new RegExp(`^/api/a/(${shareId})(?:/media/(${photoId})/(thumb|full))?$`);
 const draftMedia = new RegExp(`^/api/draft-media/(${photoId})/(thumb|full)$`);
-const pageRoute = new RegExp(`^/(?:demo/?|manage(?:/preview)?/?|a/${shareId}/?)?$`);
+const pageRoute = new RegExp(`^/(?:demo/?|manage(?:/preview)?/?|editor(?:/[^/]+)?/?|preview/[^/]+/?|a/${shareId}/?)?$`);
 const staticRoute = /^\/(?:(?:darkroom|envelope|manage|polaroid|typography)\.css|ui\/[a-z-]+\.js|assets\/[a-z0-9.-]+\.(?:svg|webp|woff2)|samples\/[a-z0-9-]+\.webp)$/;
 const soundtrack = "/assets/who-knows.m4a";
 
-async function body(req, limit) {
+async function body(req, limit, tooLarge = "The file exceeds the size limit.") {
   if (Number(req.headers["content-length"]) > limit) {
     req.resume();
-    throw new Problem(413, "The file exceeds the size limit.");
+    throw new Problem(413, tooLarge);
   }
   const buffers = [];
   let size = 0;
@@ -37,7 +37,7 @@ async function body(req, limit) {
     size += chunk.length;
     if (size > limit) {
       req.resume();
-      throw new Problem(413, "The file exceeds the size limit.");
+      throw new Problem(413, tooLarge);
     }
     buffers.push(chunk);
   }
@@ -48,7 +48,7 @@ async function jsonBody(req) {
   if (req.headers["content-type"]?.split(";")[0] !== "application/json") {
     throw new Problem(415, "The request format is invalid.");
   }
-  const raw = await body(req, 512 * 1024);
+  const raw = await body(req, 2 * 1024 * 1024, "The album data exceeds the 2 MB save limit.");
   try {
     return JSON.parse(raw);
   } catch {
@@ -119,7 +119,11 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
     const token = randomBytes(32).toString("hex");
     await data.addSession(hash(token), Date.now() + sessionLifetime * 1000);
     res.setHeader("Set-Cookie", cookie(token, sessionLifetime));
-    return send(res, 200, await data.manage());
+    const result = await data.manage().catch(async error => {
+      if (error.status !== 404) throw error;
+      return { albums: await data.list() };
+    });
+    return send(res, 200, result);
   }
 
   async function requireOwner(req) {
@@ -138,6 +142,15 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
     }
     if (req.method === "GET") {
       if (path === "/api/demo") return send(res, 200, demo);
+      const editor = path.match(/^\/api\/editor(?:\/([A-Za-z0-9_-]{16}))?(?:\/(preview|media)(?:\/([0-9a-f-]{36})\/(thumb|full))?)?$/);
+      if (editor) {
+        if (await canSetUp(req)) throw new Problem(401, "Create an owner password to get started.", "setup-required");
+        await requireOwner(req);
+        const [, id, action, photo, variant] = editor;
+        if (!id) return send(res, 200, { albums: await data.list() });
+        if (action === "media" && photo && variant) return send(res, 200, await data.media(photo, variant, undefined, id), "image/webp");
+        return send(res, 200, await (action === "preview" ? data.preview(id) : data.manage(id)));
+      }
       if (path === "/api/manage" || path === "/api/preview") {
         if (path === "/api/manage" && await canSetUp(req)) {
           throw new Problem(401, "Create an owner password to get started.", "setup-required");
@@ -171,7 +184,8 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
       }
     }
 
-    if (req.method !== "POST" || !path.startsWith("/api/manage/")) throw new Problem(404, "This page could not be found.");
+    const editRoute = path.match(/^\/api\/editor(?:\/([A-Za-z0-9_-]{16})\/(save|publish|unpublish|delete|upload|upload-target)|(\/create))$/);
+    if (req.method !== "POST" || (!path.startsWith("/api/manage/") && !editRoute)) throw new Problem(404, "This page could not be found.");
     if (req.headers.origin !== origin) throw new Problem(403, "Submit this request from the album editor.");
 
     if (path === "/api/manage/setup") {
@@ -228,31 +242,45 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
       res.setHeader("Set-Cookie", cookie("", 0));
       return send(res, 200, { ok: true });
     }
-    if (path === "/api/manage/save" || path === "/api/manage/publish") {
+    const albumId = editRoute?.[1];
+    const operation = editRoute?.[2];
+    if (editRoute?.[3]) {
       const input = await jsonBody(req);
-      const result = await (path.endsWith("/save") ? data.save(input?.revision, input?.album) : data.publish(input?.revision));
+      return send(res, 201, await data.create(input?.title));
+    }
+    if (operation === "unpublish" || operation === "delete") {
+      const input = await jsonBody(req);
+      return send(res, 200, await (operation === "unpublish" ? data.unpublish(input?.revision, albumId)
+        : data.remove(input?.revision, input?.confirmation, albumId)));
+    }
+    if (path === "/api/manage/save" || path === "/api/manage/publish" || operation === "save" || operation === "publish") {
+      const input = await jsonBody(req);
+      const result = await (path.endsWith("/save") ? data.save(input?.revision, input?.album, albumId) : data.publish(input?.revision, albumId));
       return send(res, 200, result);
     }
-    if (path === "/api/manage/upload" || (path === "/api/manage/upload-target" && data.uploadTarget)) {
+    if (path === "/api/manage/upload" || (path === "/api/manage/upload-target" && data.uploadTarget) || operation === "upload" || (operation === "upload-target" && data.uploadTarget)) {
       const id = url.searchParams.get("id");
       const roll = url.searchParams.get("roll");
       const revision = url.searchParams.get("revision");
-      if (!id || !photoIdPattern.test(id) || !roll || !/^roll-[1-3]$/.test(roll)
+      const replace = url.searchParams.get("replace") || undefined;
+      if (!id || !photoIdPattern.test(id) || (replace && (!photoIdPattern.test(replace) || replace === id)) || !roll || !/^roll-[1-3]$/.test(roll)
           || !revision || !/^\d+$/.test(revision)) throw new Problem(422, "This upload could not start. Choose the photo again.");
+      if (data.recordUploadAttempt) await data.recordUploadAttempt(hash(token));
       if (path.endsWith("/upload-target")) {
-        return send(res, 200, await data.uploadTarget(id, Number(revision), maxBytes));
+        return send(res, 200, await data.uploadTarget(id, Number(revision), maxBytes, albumId, replace));
       }
-      if (await data.hasUpload(id)) {
+      if (await data.hasUpload(id, albumId)) {
         req.resume();
-        return send(res, 200, await data.manage());
+        return send(res, 200, await data.manage(albumId));
       }
+      await data.checkUpload(id, Number(revision), albumId, replace);
       if (uploads >= 2) throw new Problem(429, "Other photos are being processed. Try again in a moment.");
       uploads++;
       try {
-        const source = data.uploadSource ? await data.uploadSource(id, maxBytes) : await body(req, maxBytes);
+        const source = data.uploadSource ? await data.uploadSource(id, maxBytes, albumId) : await body(req, maxBytes);
         const files = await processPhoto(source);
         await requireOwner(req);
-        return send(res, 200, await data.addPhoto(Number(revision), roll, id, files));
+        return send(res, 200, await data.addPhoto(Number(revision), roll, id, files, albumId, replace));
       } finally {
         uploads--;
       }
@@ -263,7 +291,7 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
   return (req, res) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Referrer-Policy", "no-referrer");
-    res.setHeader("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+    res.setHeader("Content-Security-Policy", "default-src 'self'; connect-src 'self' https://vercel.com/api/blob/; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
     res.setHeader("X-Robots-Tag", "noindex, nofollow");
     return route(req, res).catch((error) => {
       if (res.destroyed || res.headersSent) return;

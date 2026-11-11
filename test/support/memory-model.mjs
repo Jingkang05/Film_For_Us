@@ -10,4 +10,4 @@ const polaroid = url(await compile("polaroid-config"));
 const envelope = url(await compile("envelope-config"));
 const config = url((await compile("template-config")).replace("./polaroid-config.js", polaroid).replace("./envelope-config.js", envelope));
 export const modelURL = url((await compile("memory-project")).replace("./template-config.js", config));
-export const { toMemoryProject } = await import(modelURL);
+export const { toMemoryProject, serializeMemoryProject } = await import(modelURL);

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile, access } from "node:fs/promises";
 import { once } from "node:events";
-import { toMemoryProject, compile } from "./support/memory-model.mjs";
+import { toMemoryProject, serializeMemoryProject, compile } from "./support/memory-model.mjs";
 import { albumA, albumB } from "./fixtures/memory-projects.mjs";
 import { fixtureServer } from "../scripts/preview-memory-projects.mjs";
 import { initialAlbum, readPublished } from "../server/album.mjs";
@@ -64,4 +64,17 @@ test("fixture media and template font assets remain existing local files", async
   }
   const css=await readFile(new URL('../public/typography.css',import.meta.url),'utf8');
   for(const [,path] of css.matchAll(/url\(["']?(\/assets\/[^)"']+)/g)) await access(new URL(`../public${path}`,import.meta.url));
+});
+
+test("editor serialization round-trips the shared model without losing IDs, settings or metadata", () => {
+  const project = toMemoryProject({
+    id: "serialization-test", title: "A generic album", letter: "A generic letter",
+    rolls: ["#cfad77", "#b84a32", "#555e43"].map((color, index) => ({ id: `roll-${index + 1}`, name: `Roll ${index + 1}`, color,
+      photos: [{ id: `photo-${index}`, note: "Story", date: "2026-11-11", thumb: `/samples/home-1-thumb.webp`, full: `/samples/home-1.webp` }] })),
+    description: "For records", createdAt: "2026-11-11T00:00:00.000Z", updatedAt: "2026-11-11T01:00:00.000Z",
+    ending: { instantCaption: "Saved caption" }, settings: { sealMotif: "branch", music: { title: "Saved title", src: "/assets/who-knows.m4a?v=2" } },
+  });
+  const serialized = serializeMemoryProject(project, "generic-album");
+  assert.equal(serialized.shareSlug, "generic-album");
+  assert.deepEqual(toMemoryProject(serialized), project);
 });

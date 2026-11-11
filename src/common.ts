@@ -5,6 +5,7 @@ export type { Album, Photo, Roll } from "./memory-project.js";
 
 export interface ManageData {
   album: Album;
+  status: "draft" | "published" | "unpublished";
   revision: number;
   publishedRevision: number | null;
   shareId: string;

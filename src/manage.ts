@@ -1,5 +1,8 @@
+import { captureEditorFocus, restoreEditorFocus, type EditorFocus } from "./editor-focus.js";
+import { toMemoryProject, serializeMemoryProject } from "./memory-project.js";
+import { mountAlbumLibrary } from "./album-library.js";
 import { ui, uiAttr, setUIText, errorKey, t, refreshUI } from "./ui-language.js";
-import { api, app, escapeHTML as esc, icon, postJSON, RequestError, showMessage,
+import { api, app, announce, escapeHTML as esc, icon, postJSON, RequestError, showMessage,
   type ManageData, type Roll } from "./common.js";
 import { setChineseTypography } from "./typography.js";
 import { normalizeShareSlug, validShareSlug, shareSlugFromTitle } from "./share-link.js";
@@ -8,6 +11,7 @@ type Upload = {
   id: string;
   file: File;
   roll?: string;
+  replace?: string;
   state: "queued" | "uploading" | "uploaded" | "failed";
   status: string;
 };
@@ -15,14 +19,15 @@ type Upload = {
 const photoCount = (total: number) => ui(total === 1 ? "onePhoto" : "photoCount", { count: total });
 const maxPhotoBytes = 20 * 1024 * 1024;
 
-export async function mountManage() {
+export async function mountManage(albumId?: string) {
   const css = document.createElement("link");
   css.rel = "stylesheet";
   css.href = "/manage.css";
   document.head.append(css);
   document.title = "Album editor · Film for us";
   try {
-    editor(await api<ManageData>("/api/manage"));
+    if (albumId) editor(await api<ManageData>(`/api/editor/${albumId}`));
+    else await mountAlbumLibrary();
   } catch (error) {
     if (error instanceof RequestError && error.status === 401) login(error.code === "setup-required");
     else showMessage("editorFailed", "tryLater", () => location.reload());
@@ -45,7 +50,8 @@ function login(setup: boolean) {
     button.disabled = true;
     try {
       const password = new FormData(form).get("password");
-      editor(await postJSON<ManageData>(setup ? "/api/manage/setup" : "/api/manage/login", { password }));
+      await postJSON(setup ? "/api/manage/setup" : "/api/manage/login", { password });
+      location.reload();
     } catch (error) {
       setUIText(form.querySelector(".owner-feedback")!, errorKey((error as Error).message));
       button.disabled = false;
@@ -55,7 +61,12 @@ function login(setup: boolean) {
 
 function editor(initial: ManageData) {
   let data = initial;
+  const endpoint = `/api/editor/${encodeURIComponent(data.shareId)}`;
+  // Validate at the same boundary used by the Viewer, and populate all template-supported fields.
+  const normalize = () => { data.album = serializeMemoryProject(toMemoryProject(data.album), data.album.shareSlug); };
+  normalize();
   let busy = false;
+  let pendingFocus: EditorFocus | undefined;
   let dirty = false;
   let feedback = "";
   let messageError = false;
@@ -69,6 +80,7 @@ function editor(initial: ManageData) {
     if (status) {
       status.innerHTML = value;
       status.classList.toggle("owner-feedback--error", error);
+      announce(status.textContent ?? "");
     }
   }
 
@@ -88,6 +100,7 @@ function editor(initial: ManageData) {
             <button type="button" class="icon-button" data-action="up" data-id="${photo.id}" ${uiAttr("moveUp", { number: i + 1 })} ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
             <button type="button" class="icon-button" data-action="down" data-id="${photo.id}" ${uiAttr("moveDown", { number: i + 1 })} ${i === roll.photos.length - 1 ? "disabled" : ""}>${icon("down")}</button>
             <button type="button" class="text-button" data-action="remove" data-id="${photo.id}">${ui("remove")}</button>
+            <label class="replace-photo">${ui("replacePhoto")}<input type="file" name="replace" data-id="${photo.id}" accept="image/jpeg,image/png,image/webp"></label>
           </div>
         </div>
       </article>`).join("") : `<p class="owner-empty">${ui("emptyRoll")}</p>`}</fieldset>`;
@@ -120,18 +133,20 @@ function editor(initial: ManageData) {
   }
 
   function render() {
+    pendingFocus = captureEditorFocus(app) ?? pendingFocus;
     const share = `${location.origin}/a/${encodeURIComponent(data.shareSlug || data.shareId)}`;
-    const published = data.publishedRevision !== null;
+    const published = data.status === "published";
     app.innerHTML = `<section class="owner">
       <header class="owner-heading"><div><a href="/demo" class="owner-brand">Film <i>for us</i></a><h1>${ui("albumEditor")}</h1></div>
         <button class="text-button" data-action="logout" type="button">${ui("signOut")}</button></header>
+      <a href="/editor" class="text-button">${icon("left")} ${ui("allAlbums")}</a>
       <div class="owner-toolbar">
         <p id="revision-status">${dirty ? ui("unsaved") : ui("draftVersion", { version: data.revision })} · ${published ? ui("publishedVersion", { version: data.publishedRevision! }) : ui("unpublished")}</p>
         <div><a class="text-button" href="#upload">${ui("uploadPhotos")}</a>
           <button type="button" class="text-button" data-action="preview">${ui("previewDraft")} ${icon("right")}</button>
           <button type="button" class="action" data-action="save">${ui("saveDraft")}</button>
           <button type="button" class="action action--publish" data-action="publish">${ui("publish")}</button></div>
-        <p id="owner-status" class="owner-feedback ${messageError ? "owner-feedback--error" : ""}" role="status">${feedback}</p>
+        <p id="owner-status" class="owner-feedback ${messageError ? "owner-feedback--error" : ""}" >${feedback}</p>
         ${published ? `<div class="share-field"><label>${ui("shareLink")}<input readonly value="${esc(share)}"></label><button type="button" class="action" data-action="copy">${ui("copyLink")}</button></div>` : ""}
       </div>
       <section class="owner-section"><h2>${ui("openingLetter")}</h2>
@@ -149,6 +164,13 @@ function editor(initial: ManageData) {
         <p class="slug-preview"><span>${ui("linkAfterPublish")}</span><span id="slug-preview" dir="ltr"></span></p>
         <p class="owner-empty">${ui("slugPublishHint")}</p>
       </section>
+      <section class="owner-section"><h2>${ui("templateSettings")}</h2>
+        <label>${ui("description")}<textarea name="description" rows="2" maxlength="2000">${esc(data.album.description ?? "")}</textarea></label>
+        <label>${ui("instantCaption")}<textarea name="instant-caption" rows="2" maxlength="600">${esc(data.album.ending!.instantCaption)}</textarea></label>
+        <label>${ui("sealMotif")}<select name="seal-motif"><option value="rose" data-ui="sealRose" ${data.album.settings!.sealMotif === "rose" ? "selected" : ""}>${esc(t("sealRose"))}</option><option value="branch" data-ui="sealBranch" ${data.album.settings!.sealMotif === "branch" ? "selected" : ""}>${esc(t("sealBranch"))}</option></select></label>
+        <label>${ui("soundtrackTitle")}<input name="music-title" maxlength="160" value="${esc(data.album.settings!.music.title)}"></label>
+        <p class="owner-empty">${ui("soundtrackHelp")}</p>
+      </section>
       ${uploadModule()}
       <section class="owner-section owner-rolls"><h2>${ui("rollsPhotos")}</h2>
         ${data.album.rolls.map(rollFields).join("")}
@@ -160,6 +182,7 @@ function editor(initial: ManageData) {
     refreshUI(app);
     updateLinkPreview();
     if (busy) lockControls();
+    else { restoreEditorFocus(app, pendingFocus); pendingFocus = undefined; }
   }
 
   function lockControls() {
@@ -195,6 +218,10 @@ function editor(initial: ManageData) {
     const input = event.target as HTMLInputElement | HTMLTextAreaElement;
     setChineseTypography(input, input.value);
     if (input.name === "title" || input.name === "letter") data.album[input.name] = input.value;
+    else if (input.name === "description") data.album.description = input.value;
+    else if (input.name === "instant-caption") data.album.ending!.instantCaption = input.value;
+    else if (input.name === "seal-motif") data.album.settings!.sealMotif = input.value as "rose" | "branch";
+    else if (input.name === "music-title") data.album.settings!.music.title = input.value;
     else if (input.name === "share-slug") {
       data.album.shareSlug = input.value;
       updateLinkPreview();
@@ -211,16 +238,21 @@ function editor(initial: ManageData) {
   async function save() {
     if (!dirty) return;
     if (!validShareSlug(data.album.shareSlug ?? "")) throw new Error("Use up to 80 English letters, numbers, hyphens or underscores for the URL suffix.");
-    data = await postJSON<ManageData>("/api/manage/save", { revision: data.revision, album: data.album });
+    data = await postJSON<ManageData>(`${endpoint}/save`, { revision: data.revision, album: serializeMemoryProject(toMemoryProject(data.album), data.album.shareSlug) });
+    normalize();
     dirty = false;
   }
 
   async function run(work: () => Promise<void>) {
     if (busy) return;
+    pendingFocus = captureEditorFocus(app) ?? pendingFocus;
     busy = true;
     lockControls();
     try { await work(); }
-    catch (error) { notice(ui(errorKey((error as Error).message)), true); }
+    catch (error) {
+      const message = (error as Error).message, key = errorKey(message);
+      notice(key === "genericError" ? esc(message) : ui(key), true);
+    }
     finally {
       busy = false;
       render();
@@ -235,10 +267,11 @@ function editor(initial: ManageData) {
       item.status = "";
       render();
       const query = new URLSearchParams({ id: item.id, roll: item.roll, revision: String(data.revision) });
+      if (item.replace) query.set("replace", item.replace);
       try {
         if (item.file.size > maxPhotoBytes) throw new Error("The file exceeds the size limit.");
         if (data.directUpload) {
-          const { url } = await api<{ url?: string }>(`/api/manage/upload-target?${query}`, { method: "POST" });
+          const { url } = await api<{ url?: string }>(`${endpoint}/upload-target?${query}`, { method: "POST" });
           if (url) {
             const result = await fetch(url, {
               method: "PUT", headers: { "Content-Type": "application/octet-stream" }, body: item.file,
@@ -246,9 +279,10 @@ function editor(initial: ManageData) {
             if (!result?.ok) throw new Error("The photo could not be uploaded. Check your connection and try again.");
           }
         }
-        data = await api<ManageData>(`/api/manage/upload?${query}`, {
+        data = await api<ManageData>(`${endpoint}/upload?${query}`, {
           method: "POST", body: data.directUpload ? undefined : item.file,
         });
+        normalize();
         item.state = "uploaded";
         item.status = "";
       } catch (error) {
@@ -277,6 +311,14 @@ function editor(initial: ManageData) {
     if (busy) return;
     if (field.name === "upload-roll") uploadTarget = field.value;
     if (field.name === "files" && field.files) stageFiles(field.files);
+    if (field.name === "replace" && field.files?.[0]) {
+      const match = photoLocation(field.dataset.id!);
+      if (match) {
+        const item: Upload = { id: crypto.randomUUID(), replace: match.photo.id, roll: match.roll.id, file: field.files[0], state: "queued", status: "" };
+        uploads.push(item);
+        void run(() => upload([item]));
+      }
+    }
     if (field.name === "move") {
       const match = photoLocation(field.dataset.id!);
       const destination = data.album.rolls.find((roll) => roll.id === field.value);
@@ -323,13 +365,14 @@ function editor(initial: ManageData) {
       field.focus();
     }
     if (action === "save") void run(async () => { await save(); notice(ui("draftSaved")); });
-    if (action === "preview") void run(async () => { await save(); location.assign("/manage/preview"); });
+    if (action === "preview") void run(async () => { await save(); busy = false; location.assign(`/preview/${data.shareId}`); });
     if (action === "publish") void run(async () => {
       await save();
-      data = await postJSON<ManageData>("/api/manage/publish", { revision: data.revision });
+      data = await postJSON<ManageData>(`${endpoint}/publish`, { revision: data.revision });
+      normalize();
       notice(ui("albumPublished"));
     });
-    if (action === "logout") void run(async () => { await save(); await postJSON("/api/manage/logout", {}); location.reload(); });
+    if (action === "logout") void run(async () => { await save(); await postJSON("/api/manage/logout", {}); busy = false; location.reload(); });
     if (action === "upload") {
       const queued = uploads.filter((item) => item.state === "queued");
       if (queued.length) void run(() => upload(queued));
@@ -364,7 +407,7 @@ function editor(initial: ManageData) {
     }
   });
   window.addEventListener("beforeunload", (event) => {
-    if (dirty) event.preventDefault();
+    if (dirty || busy || uploads.some(item => item.state !== "uploaded")) event.preventDefault();
   });
   render();
   if (location.hash === "#upload") document.getElementById("upload")?.scrollIntoView();
