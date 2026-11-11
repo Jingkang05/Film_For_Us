@@ -98,17 +98,17 @@ test("duplicate album IDs are rejected and throttling is persisted", async () =>
   await assert.rejects(store.recordUploadAttempt("session"), { status: 429 });
 });
 
-test("production build preflight verifies administrator, backup and every referenced asset without changing live metadata", async () => {
+test("explicit deep audit verifies administrator, backup and referenced assets without changing live metadata", async () => {
   const initial = legacyState(); initial.owner = { salt: "a".repeat(32), password_hash: "b".repeat(128) };
   const blob = memoryBlob(initial), store = openBlobAlbum("test", blob);
   const originalBytes = Buffer.from(blob.files.get(albumStatePath("test")).bytes);
   for (const id of initial.uploaded) for (const variant of ["source", "thumb", "full"]) blob.store(photoPath("test", id, variant), variant);
-  const result = await store.verifyExisting(initial.album.share_id);
+  const result = await store.verifyExisting(initial.album.share_id, { deep: true });
   assert.equal(result.publishedPhotos, 3); assert.equal(result.verifiedAssets, 3);
   assert.deepEqual(blob.files.get(result.backupPath).bytes, originalBytes);
   assert.deepEqual(blob.files.get(albumStatePath("test")).bytes, originalBytes);
   blob.files.delete(photoPath("test", initial.uploaded[0], "source"));
-  await assert.rejects(store.verifyExisting(initial.album.share_id));
+  await assert.rejects(store.verifyExisting(initial.album.share_id, { deep: true }));
   await assert.rejects(store.verifyExisting("incorrect-id"));
   assert.deepEqual(blob.files.get(albumStatePath("test")).bytes, originalBytes);
 });

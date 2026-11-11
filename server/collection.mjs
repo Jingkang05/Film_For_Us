@@ -48,7 +48,7 @@ function publicRow(state, share) {
   if (!row || row.deleted || albumStatus(row) !== "published") throw new Problem(404, "This album has not been published yet.");
   return row;
 }
-export function collectionStore({ snapshot, change, writeMedia, readMedia, directUpload = false, newAlbum = initialAlbum }) {
+export function collectionStore({ snapshot, change, writeMedia, readMedia, directUpload = false, newAlbum = initialAlbum, storageLimitBytes = Infinity }) {
   const manage = row => ({ ...manageAlbum(row), ...(directUpload ? { directUpload: true } : {}) });
   return {
     async list() {
@@ -114,6 +114,11 @@ export function collectionStore({ snapshot, change, writeMedia, readMedia, direc
         const row = findAlbum(state, id), uploaded = uploadsFor(state, row);
         if (uploaded.includes(asset)) return manage(row);
         assertRevision(row, revision);
+        if (Number.isFinite(storageLimitBytes)) {
+          const bytes = (files.source?.length ?? 0) + files.thumb.length + files.full.length;
+          if ((row.storageBytes ?? 0) + bytes > storageLimitBytes) throw new Problem(422, "This album has reached its storage limit.");
+          row.storageBytes = (row.storageBytes ?? 0) + bytes;
+        }
         const content = JSON.parse(row.draft);
         if (replace) {
           assertPhoto(content, replace);

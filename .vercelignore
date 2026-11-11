@@ -2,4 +2,8 @@
 .env*
 .git/
 node_modules/
+.pnpm-store/
+docs/
+test/
+previews/
 public/ui/

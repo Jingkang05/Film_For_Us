@@ -90,7 +90,7 @@ export function openBlobAlbum(prefix = "roll-for-us", blob = { get, head, put, i
   });
   return {
     ...store,
-    async verifyExisting(expectedId) {
+    async verifyExisting(expectedId, { deep = false } = {}) {
       const current = await read();
       if (!current || current.state.album?.share_id !== expectedId) throw new Error("Production album identity verification failed.");
       const { state, raw } = current;
@@ -99,16 +99,16 @@ export function openBlobAlbum(prefix = "roll-for-us", blob = { get, head, put, i
       if (!(process.env.OWNER_PASSWORD?.length >= 12) && (!/^[a-f0-9]{128}$/.test(state.owner?.password_hash ?? "") || !/^[a-f0-9]{32}$/.test(state.owner?.salt ?? ""))) {
         throw new Error("Production administrator protection is not configured.");
       }
-      const backupPath = await backup(raw);
+      const backupPath = deep ? await backup(raw) : undefined;
       const content = JSON.parse(state.album.published);
       const draft = JSON.parse(state.album.draft);
       const assets = [...new Set([...content.rolls, ...draft.rolls].flatMap(roll => roll.photos.map(photo => photo.assetId ?? photo.id)))];
       for (const asset of assets) {
         if (!state.uploaded.includes(asset)) throw new Error("Production photo reference verification failed.");
-        await Promise.all(["source", "thumb", "full"].map(variant => blob.head(photoPath(prefix, asset, variant))));
+        if (deep) await Promise.all(["source", "thumb", "full"].map(variant => blob.head(photoPath(prefix, asset, variant))));
       }
       return { albumId: expectedId, publishedPhotos: content.rolls.reduce((n, roll) => n + roll.photos.length, 0),
-        verifiedAssets: assets.length, backupPath, sha256: createHash("sha256").update(raw).digest("hex") };
+        verifiedAssets: deep ? assets.length : 0, referencedAssets: assets.length, deepAudit: deep, backupPath, sha256: createHash("sha256").update(raw).digest("hex") };
     },
     async uploadTarget(id, revision, maximumSizeInBytes, albumId, replace) {
       const row = await store.checkUpload(id, revision, albumId, replace);

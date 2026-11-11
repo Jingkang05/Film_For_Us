@@ -277,12 +277,12 @@ function editor(initial: ManageData) {
         item.status = "";
         render();
         if (data.directUpload) {
-          const { url } = await api<{ url?: string }>(`${endpoint}/upload-target?${query}`, { method: "POST" });
+          const { url, headers } = await api<{ url?: string; headers?: Record<string, string> }>(`${endpoint}/upload-target?${query}`, { method: "POST" });
           if (url) {
             const result = await fetch(url, {
-              method: "PUT", headers: { "Content-Type": "application/octet-stream" }, body: prepared,
+              method: "PUT", headers: headers ?? { "Content-Type": "application/octet-stream" }, body: prepared,
             }).catch(() => null);
-            if (!result?.ok) throw new Error("The photo could not be uploaded. Check your connection and try again.");
+            if (!result?.ok && result?.status !== 412) throw new Error("The photo could not be uploaded. Check your connection and try again.");
           }
         }
         data = await api<ManageData>(`${endpoint}/upload?${query}`, {

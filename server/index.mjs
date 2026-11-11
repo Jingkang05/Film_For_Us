@@ -104,7 +104,7 @@ function sendAudio(req, res, audio) {
   return res.end(req.method === "HEAD" ? undefined : audio);
 }
 
-export function createHandler({ data, password = "", origin, allowLocalSetup = false, allowStoredOwner = false }) {
+export function createHandler({ data, password = "", origin, allowLocalSetup = false, allowStoredOwner = false, writeFreeze = false }) {
   const originUrl = new URL(origin);
   const secure = originUrl.protocol === "https:" ? "; Secure" : "";
   let uploads = 0;
@@ -129,12 +129,17 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
   async function requireOwner(req) {
     const token = readToken(req);
     const storedOwner = allowStoredOwner || localRequest(req);
+    if (data.ownerAuthorized) {
+      if (!token || !await data.ownerAuthorized(hash(token), password.length >= 12)) throw new Problem(401, "Sign in to manage the album.");
+      return token;
+    }
     if (!token || !(password.length >= 12 || storedOwner && await data.localOwner())
         || !await data.sessionValid(hash(token))) throw new Problem(401, "Sign in to manage the album.");
     return token;
   }
 
   async function route(req, res) {
+    if (writeFreeze && req.method !== "GET" && req.method !== "HEAD") throw new Problem(503, "Album updates are temporarily paused for storage maintenance.");
     const url = new URL(req.url, origin);
     const path = url.pathname;
     if (path === soundtrack && (req.method === "GET" || req.method === "HEAD")) {
@@ -148,7 +153,7 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
         await requireOwner(req);
         const [, id, action, photo, variant] = editor;
         if (!id) return send(res, 200, { albums: await data.list() });
-        if (action === "media" && photo && variant) return send(res, 200, await data.media(photo, variant, undefined, id), "image/webp");
+        if (action === "media" && photo && variant) return sendMedia(req, res, photo, variant, undefined, id);
         return send(res, 200, await (action === "preview" ? data.preview(id) : data.manage(id)));
       }
       if (path === "/api/manage" || path === "/api/preview") {
@@ -164,13 +169,13 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
         let share;
         try { share = decodeURIComponent(encodedShare); }
         catch { throw new Problem(404, "This album has not been published yet."); }
-        return id ? send(res, 200, await data.media(id, variant, share), "image/webp")
+        return id ? sendMedia(req, res, id, variant, share)
           : send(res, 200, await data.published(share));
       }
       const media = path.match(draftMedia);
       if (media) {
         await requireOwner(req);
-        return send(res, 200, await data.media(media[1], media[2]), "image/webp");
+        return sendMedia(req, res, media[1], media[2]);
       }
       const page = pageRoute.test(path);
       if (page || staticRoute.test(path)) {
@@ -288,12 +293,19 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
     throw new Problem(404, "This page could not be found.");
   }
 
+  async function sendMedia(req, res, id, variant, share, albumId) {
+    const result = await data.media(id, variant, share, albumId, req.headers["if-none-match"]);
+    if (result instanceof Uint8Array) return send(res, 200, result, "image/webp");
+    res.setHeader("ETag", result.etag);
+    return send(res, result.status, result.bytes, "image/webp", "private, no-cache");
+  }
+
   return (req, res) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Referrer-Policy", "no-referrer");
-    res.setHeader("Content-Security-Policy", "default-src 'self'; connect-src 'self' https://vercel.com/api/blob/; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+    res.setHeader("Content-Security-Policy", "default-src 'self'; connect-src 'self' https://vercel.com/api/blob/ https://*.r2.cloudflarestorage.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
     res.setHeader("X-Robots-Tag", "noindex, nofollow");
-    return route(req, res).catch((error) => {
+    return (data.runRequest ? data.runRequest(() => route(req, res)) : route(req, res)).catch((error) => {
       if (res.destroyed || res.headersSent) return;
       req.resume();
       if (!(error instanceof Problem)) console.error(error);
