@@ -3,8 +3,8 @@ import { envelopeDesign } from "./envelope-config.js";
 
 // The seal and pressed specimen are independent photographic alpha assets.
 // Only this assembly peels up; its silhouette shadows stay on the paper below.
-function waxSeal(open: boolean) {
-  const seal = envelopeDesign.seals[envelopeDesign.motif];
+function waxSeal(open: boolean, motif: "rose" | "branch") {
+  const seal = envelopeDesign.seals[motif];
   return `<div class="botanical-paper-shadow" aria-hidden="true">
       <span class="botanical-cast botanical-cast--near"></span>
       <span class="botanical-cast botanical-cast--far"></span>
@@ -18,7 +18,7 @@ function waxSeal(open: boolean) {
     </div>`;
 }
 
-export function envelopeObject(open: boolean, letterPreview: string) {
+export function envelopeObject(open: boolean, letterPreview: string, motif = envelopeDesign.motif) {
   return `<div class="envelope" data-envelope-state="${open ? "completed" : "sealed"}">
     <div class="envelope-back" aria-hidden="true"></div>
     <div class="envelope-mouth" aria-hidden="true"></div>
@@ -41,7 +41,7 @@ export function envelopeObject(open: boolean, letterPreview: string) {
     <div class="envelope-hinge">
       <div class="envelope-flap-face envelope-flap-face--front" aria-hidden="true"><span class="stamp">PERSONAL</span></div>
       <div class="envelope-flap-face envelope-flap-face--back" aria-hidden="true"></div>
-      ${waxSeal(open)}
+      ${waxSeal(open, motif)}
     </div>
     <div class="envelope-crease" aria-hidden="true"></div>
   </div>`;

@@ -20,7 +20,7 @@ const soundPreference = "roll-for-us:shutter-sound";
 const transform = ({ x, y, angle, sx, sy }: Pose) =>
   `translate3d(${x}px,${y}px,0) translate(-50%,-50%) rotate(${angle}deg) scale(${sx},${sy})`;
 
-export function mountPolaroid(host: HTMLElement, photos: Photo[], onBack: () => void) {
+export function mountPolaroid(host: HTMLElement, photos: Photo[], onBack: () => void, caption = copy.footer) {
   host.innerHTML = `<section class="instant-room" data-phase="idle" aria-labelledby="instant-title">
     <h1 class="sr-only" id="instant-title" tabindex="-1">${ui("instantEntry")}</h1>
     <header class="instant-bar">
@@ -53,7 +53,7 @@ export function mountPolaroid(host: HTMLElement, photos: Photo[], onBack: () => 
       <div class="instant-prints"></div>
     </div>
     <footer class="instant-foot">
-      <p class="instant-caption">${esc(copy.footer)}</p>
+      <p class="instant-caption">${esc(caption)}</p>
       <button type="button" class="instant-icon instant-sound" ${uiAttr("shutterSound")}></button>
       <div class="instant-counter">
         <span>${ui("printCount")}</span>

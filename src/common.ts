@@ -1,28 +1,7 @@
 import { setUIText, ui, uiLanguage, type UIValues } from "./ui-language.js";
 import type { UIKey } from "./ui-translations.js";
-export interface Photo {
-  id: string;
-  date: string;
-  note: string;
-  thumb: string;
-  full: string;
-}
-
-export interface Roll {
-  id: string;
-  name: string;
-  color: string;
-  photos: Photo[];
-}
-
-export interface Album {
-  id: string;
-  title: string;
-  shareSlug?: string;
-  letter: string;
-  rolls: Roll[];
-  demo?: boolean;
-}
+import type { Album } from "./memory-project.js";
+export type { Album, Photo, Roll } from "./memory-project.js";
 
 export interface ManageData {
   album: Album;

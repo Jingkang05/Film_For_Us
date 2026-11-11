@@ -1,14 +1,13 @@
 import { ui, setUIAttr } from "./ui-language.js";
 import { announceUI, icon } from "./common.js";
 
-const title = "Who Knows by Daniel Caesar";
-
-export function mountSoundtrack(host: HTMLElement) {
+export function mountSoundtrack(host: HTMLElement, music: { title: string; src: string }) {
+  const { title, src } = music;
   const audio = document.createElement("audio");
   audio.preload = "auto";
   audio.autoplay = true;
   audio.loop = true;
-  audio.src = "/assets/who-knows.m4a?v=2";
+  audio.src = src;
   audio.hidden = true;
   document.body.append(audio);
 
