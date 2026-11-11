@@ -26,6 +26,10 @@ test("R2 adapter uses conditional S3 operations, normalizes failures, and suppor
     error = { $metadata: { httpStatusCode: status }, message: "must not leak signed-url-secret" };
     await assert.rejects(store.read("key"), e => e instanceof StorageFailure && e.status === status && !e.message.includes("secret"));
   }
+  error = { name: "AccessDenied", $metadata: { httpStatusCode: 403 }, message: "signed-url-secret" };
+  await assert.rejects(store.read("key"), e => e.providerCode === "AccessDenied" && !e.cause && !e.message.includes("secret"));
+  error = { name: "signed-url-secret", $metadata: { httpStatusCode: 403 } };
+  await assert.rejects(store.read("key"), e => e.providerCode === undefined && !e.message.includes("secret"));
 });
 test("presigned R2 uploads are short lived, create-only and require signed headers", async () => {
   const store = createR2Storage({ bucket: "synthetic-bucket", endpoint: "https://synthetic.r2.cloudflarestorage.com", region: "auto",

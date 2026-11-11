@@ -4,7 +4,11 @@ export class StorageConflict extends Error { constructor() { super("Object chang
 export class StorageFailure extends Error {
   // SDK errors may contain signed URLs/headers; never retain them as Error.cause
   // because ordinary console.error would print those credentials.
-  constructor(operation, status) { super(`Storage ${operation} failed${status ? ` (${status})` : ""}.`); this.name = "StorageFailure"; this.status = status; }
+  constructor(operation, status, providerCode) {
+    const safeCode = ["AccessDenied", "SignatureDoesNotMatch", "InvalidAccessKeyId", "InvalidToken", "ExpiredToken", "NoSuchBucket", "Forbidden", "SlowDown", "InternalError"].includes(providerCode) ? providerCode : undefined;
+    super(`Storage ${operation} failed${status ? ` (${status}${safeCode ? `; ${safeCode}` : ""})` : ""}.`);
+    this.name = "StorageFailure"; this.status = status; this.providerCode = safeCode;
+  }
 }
 export const sha256 = bytes => createHash("sha256").update(bytes).digest("hex");
 export async function readBytes(object, limit = 32 * 1024 * 1024) {

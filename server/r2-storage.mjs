@@ -26,7 +26,7 @@ export function createR2Storage({ bucket, endpoint, credentials, region = "auto"
       const status = error.$metadata?.httpStatusCode;
       if (status === 412 || error.name === "PreconditionFailed") throw new StorageConflict();
       if (missing && (status === 404 || error.name === "NoSuchKey" || error.name === "NotFound")) return null;
-      throw new StorageFailure(op, status, error);
+      throw new StorageFailure(op, status, error.name ?? error.Code);
     }
   }
   return {
