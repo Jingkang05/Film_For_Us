@@ -1,6 +1,6 @@
 # Emergency partial recovery release
 
-This supersedes the earlier requirement to recover all original media before release. The user accepts a historical partial publication. Production execution still requires the explicit approval requested by automatic review; preparation and offline testing alone do not mean the site is restored.
+This supersedes the earlier requirement to recover all original media before release. The user accepts a historical partial publication. The user subsequently explicitly approved the private recovery job, partial state initialization, merge and deployment. Live recovery and staged application gates have passed; see r2-recovery-status.md for deployment IDs and evidence.
 
 ## Prepared data
 
@@ -16,7 +16,7 @@ This supersedes the earlier requirement to recover all original media before rel
 
 `scripts/run-private-recovery.mjs` is a build-only runner, not an HTTP endpoint. A private input bundle is generated under ignored `.data/r2-recovery/private-build/` and deployed by the authenticated Vercel CLI to the existing project with production credentials and **`--skip-domain`**. The R2 secret remains in Vercel. No CLI `--token`, secret printing, migration API or public access to private input files is introduced.
 
-The dry-run upload inventory has 46 files, including exactly 33 allowlisted media files; it has zero API routes and zero public input files. The runner writes only a generic status page and a counts/digest report to the configured `public` output directory. Private state and source media remain outside that public output.
+The initial dry-run upload inventory has 46 files (a later private read diagnostic added one source file), including exactly 33 allowlisted media files; it has zero API routes and zero public input files. The runner writes only a generic status page and a counts/digest report to the configured `public` output directory. Private state and source media remain outside that public output.
 
 The job first verifies every local input hash, then performs a synthetic R2 put/read/stat/create-only/CAS/stale-CAS/delete check. Only that newly created disposable synthetic object is deleted. It then copies the explicit 33-object inventory serially with destination checksum/type/size readback, verifies a private exact-byte initial-state backup, initializes R2 only if no control document exists, and compares the restored logical state to the prepared state. A different existing control state aborts rather than being overwritten.
 
