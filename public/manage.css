@@ -24,6 +24,18 @@
 .owner-toolbar #owner-status { margin-top: .55rem; }
 .owner-toolbar .share-field { margin-top: 1rem; }
 .share-field label { flex: 1 1 14rem; }
+.slug-controls { display: flex; align-items: end; gap: .5rem 1rem; flex-wrap: wrap; }
+.slug-controls > label { flex: 1 1 16rem; min-width: 0; }
+.slug-input { display: flex; align-items: center; border: 1px solid #8a5f4c; background: #20120e; }
+.slug-input > span { padding-left: .65rem; color: var(--muted); font-size: 1rem; }
+.owner .slug-input input { border: 0; background: transparent; }
+.slug-input:focus-within { outline: 2px solid #f2c298; outline-offset: 3px; }
+.owner .slug-input input:focus-visible { outline: none; }
+.slug-input:has([aria-invalid=true]) { border-color: #ffa18d; }
+.slug-preview { display: grid; gap: .35rem; margin: 0; font-size: .9rem; }
+#slug-preview { overflow-wrap: anywhere; user-select: all; }
+.slug-error { margin: 0; font-size: .9rem; }
+.slug-error:empty { display: none; }
 .owner-feedback { min-height: 1.35em; color: #dbba91; font-size: .9rem; }
 .owner-feedback--error { color: #ffa18d; }
 .owner-section { padding: 1.6rem 0; border-bottom: 1px solid #674236; }

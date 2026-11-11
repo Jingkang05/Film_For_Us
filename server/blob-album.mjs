@@ -1,7 +1,7 @@
 import { BlobNotFoundError, BlobPreconditionFailedError, get, head, issueSignedToken, presignUrl, put } from "@vercel/blob";
 import {
   Problem, addDraftPhoto, assertPhoto, assertRevision, initialAlbum, manageAlbum,
-  readPublished, saveDraft, validatePublication, withMedia,
+  readPublished, saveDraft, validatePublication, withMedia, publicationSnapshot,
 } from "./album.mjs";
 
 const privateBlob = { access: "private" };
@@ -131,7 +131,7 @@ export function openBlobAlbum(prefix = "roll-for-us") {
         if (album.published_revision !== revision) {
           validatePublication(album, revision, (id) => uploaded.includes(id));
           album.published_revision = revision;
-          album.published = album.draft;
+          album.published = publicationSnapshot(album);
         }
         return manage(album);
       });

@@ -19,7 +19,7 @@ const hash = (value) => createHash("sha256").update(value).digest("hex");
 const derivePassword = promisify(scrypt);
 const photoId = "[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
 const photoIdPattern = new RegExp(`^${photoId}$`);
-const shareId = "[a-zA-Z0-9_-]{16}";
+const shareId = "[^/]+";
 const publishedRoute = new RegExp(`^/api/a/(${shareId})(?:/media/(${photoId})/(thumb|full))?$`);
 const draftMedia = new RegExp(`^/api/draft-media/(${photoId})/(thumb|full)$`);
 const pageRoute = new RegExp(`^/(?:demo/?|manage(?:/preview)?/?|a/${shareId}/?)?$`);
@@ -147,7 +147,10 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
       }
       const published = path.match(publishedRoute);
       if (published) {
-        const [, share, id, variant] = published;
+        const [, encodedShare, id, variant] = published;
+        let share;
+        try { share = decodeURIComponent(encodedShare); }
+        catch { throw new Problem(404, "This album has not been published yet."); }
         return id ? send(res, 200, await data.media(id, variant, share), "image/webp")
           : send(res, 200, await data.published(share));
       }

@@ -12,7 +12,7 @@ async function start() {
   }
   const source = path === "/" || path === "/demo" ? "/api/demo"
     : path === "/manage/preview" ? "/api/preview"
-    : path.match(/^\/a\/[a-zA-Z0-9_-]+$/) ? `/api${path}` : null;
+    : path.match(/^\/a\/[^/]+$/) ? `/api${path}` : null;
   if (!source) {
     showMessage("pageMissing", "checkLink");
     return;

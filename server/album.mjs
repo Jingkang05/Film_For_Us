@@ -20,6 +20,25 @@ function text(value, limit) {
   return value.trim();
 }
 
+export function validateShareSlug(value) {
+  if (typeof value !== "string") throw new Problem(422, "Use up to 80 English letters, numbers, hyphens or underscores for the URL suffix.");
+  const slug = value.normalize("NFKC").trim().toLowerCase();
+  if (slug.length > 80 || (slug && !/^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?$/.test(slug))) {
+    throw new Problem(422, "Use up to 80 English letters, numbers, hyphens or underscores for the URL suffix.");
+  }
+  return slug;
+}
+
+// Keep every previously published address valid, including when the suffix is cleared.
+export function publicationSnapshot(row) {
+  const next = JSON.parse(row.draft);
+  const previous = row.published ? JSON.parse(row.published) : {};
+  const aliases = new Set(previous.shareAliases ?? []);
+  if (previous.shareSlug) aliases.add(previous.shareSlug);
+  if (next.shareSlug) aliases.add(next.shareSlug);
+  return JSON.stringify({ ...next, shareAliases: [...aliases] });
+}
+
 function validateDraft(input, previous) {
   if (!input || !Array.isArray(input.rolls) || input.rolls.length !== previous.rolls.length) {
     throw new Problem(422, "The album needs three film rolls.");
@@ -27,6 +46,7 @@ function validateDraft(input, previous) {
   const available = new Set(previous.rolls.flatMap((roll) => roll.photos.map(({ id }) => id)));
   return {
     title: text(input.title, 80),
+    shareSlug: validateShareSlug(input.shareSlug ?? previous.shareSlug ?? ""),
     letter: text(input.letter, 2000),
     rolls: previous.rolls.map((existing, index) => {
       const roll = input.rolls[index];
@@ -53,8 +73,9 @@ function validateDraft(input, previous) {
 }
 
 export function withMedia(album, id, base) {
+  const { shareAliases, ...content } = album;
   return {
-    ...album, id,
+    ...content, id,
     rolls: album.rolls.map((roll) => ({
       ...roll,
       photos: roll.photos.map((photo) => ({
@@ -81,6 +102,7 @@ export function manageAlbum(row) {
     revision: row.revision,
     publishedRevision: row.published_revision,
     shareId: row.share_id,
+    shareSlug: row.published ? JSON.parse(row.published).shareSlug ?? "" : "",
   };
 }
 
@@ -114,8 +136,11 @@ export function validatePublication(row, revision, hasUpload) {
 }
 
 export function readPublished(row, shareId) {
-  if (row.share_id !== shareId || !row.published) throw new Problem(404, "This album has not been published yet.");
-  return withMedia(JSON.parse(row.published), row.share_id, `/api/a/${row.share_id}/media`);
+  const album = row.published ? JSON.parse(row.published) : null;
+  if (!album || (row.share_id !== shareId && album.shareSlug !== shareId && !(album.shareAliases ?? []).includes(shareId))) {
+    throw new Problem(404, "This album has not been published yet.");
+  }
+  return withMedia(album, row.share_id, `/api/a/${row.share_id}/media`);
 }
 
 export function assertPhoto(album, id) {
@@ -197,7 +222,7 @@ export function openAlbum(file) {
         assertRevision(row, revision);
         if (row.published_revision === revision) return manage(row);
         validatePublication(row, revision, (id) => this.hasUpload(id));
-        db.prepare("UPDATE album SET published_revision = ?, published = ? WHERE id = 1").run(revision, row.draft);
+        db.prepare("UPDATE album SET published_revision = ?, published = ? WHERE id = 1").run(revision, publicationSnapshot(row));
         return manage();
       });
     },

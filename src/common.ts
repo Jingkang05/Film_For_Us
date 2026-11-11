@@ -18,6 +18,7 @@ export interface Roll {
 export interface Album {
   id: string;
   title: string;
+  shareSlug?: string;
   letter: string;
   rolls: Roll[];
   demo?: boolean;
@@ -28,6 +29,7 @@ export interface ManageData {
   revision: number;
   publishedRevision: number | null;
   shareId: string;
+  shareSlug: string;
   directUpload?: boolean;
 }
 
