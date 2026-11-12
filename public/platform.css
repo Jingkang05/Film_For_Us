@@ -46,13 +46,75 @@ body:has(.viewer-menu-toggle) .scene-bar { padding-right: max(10.5rem, calc(env(
   text-align: center;
 }
 .demo-opening-invitation a {
-  display: inline-block;
-  padding: .65rem 1rem;
-  color: var(--cream, #e8d4b4);
-  border-bottom: 1px solid currentColor;
-  opacity: .78;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  max-width: 100%;
+  padding: .8rem 1.65rem;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(242, 223, 192, .27);
+  border-radius: 999px;
+  background: #382a22;
+  color: var(--light, #f2dfc0);
+  text-align: center;
+  text-decoration: none;
+  text-shadow: 0 1px 2px rgba(11, 7, 6, .55);
+  box-shadow: inset 0 1px 0 rgba(255, 243, 220, .17),
+    inset 0 -1px 0 rgba(11, 7, 6, .22), 0 5px 16px rgba(11, 7, 6, .2);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 180ms ease, background-color 180ms ease,
+    border-color 180ms ease, box-shadow 180ms ease;
 }
-.demo-opening-invitation a:hover, .demo-opening-invitation a:focus-visible { opacity: 1; }
+.demo-opening-invitation a::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(165deg, rgba(255, 242, 218, .12), rgba(255, 242, 218, .025) 46%, transparent 62%);
+}
+@supports ((-webkit-backdrop-filter: blur(12px)) or (backdrop-filter: blur(12px))) {
+  .demo-opening-invitation a {
+    background-color: rgba(100, 77, 58, .23);
+    -webkit-backdrop-filter: blur(12px) saturate(110%);
+    backdrop-filter: blur(12px) saturate(110%);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .demo-opening-invitation a:hover {
+    transform: translateY(-1px);
+    background-color: rgba(100, 77, 58, .38);
+    border-color: rgba(242, 223, 192, .43);
+    box-shadow: inset 0 1px 0 rgba(255, 243, 220, .24),
+      inset 0 -1px 0 rgba(11, 7, 6, .22), 0 7px 20px rgba(11, 7, 6, .24);
+    text-decoration: none;
+  }
+}
+.demo-opening-invitation a:active {
+  transform: translateY(1px) scale(.99);
+  background-color: rgba(100, 77, 58, .5);
+  box-shadow: inset 0 1px 3px rgba(11, 7, 6, .24);
+}
+.demo-opening-invitation a:focus-visible {
+  outline: 2px solid var(--light, #f2dfc0);
+  outline-offset: 4px;
+  text-decoration: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-opening-invitation a { transition: none; }
+  .demo-opening-invitation a:hover, .demo-opening-invitation a:active { transform: none; }
+}
+@media (prefers-contrast: more) {
+  .demo-opening-invitation a { background: #382a22; border-color: var(--light, #f2dfc0); }
+}
+@media (forced-colors: active) {
+  .demo-opening-invitation a { border: 1px solid ButtonText; }
+}
 @media (max-width: 600px) {
-  .demo-opening-invitation { margin-top: 1.5rem; }
+  .demo-opening-invitation { margin-top: 1.75rem; }
 }
