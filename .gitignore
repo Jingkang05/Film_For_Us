@@ -8,3 +8,5 @@ public/ui/
 .DS_Store
 .vercel
 .env*
+!.env.example
+supabase/.temp/

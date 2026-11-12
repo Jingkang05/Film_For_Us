@@ -22,8 +22,8 @@ const photoIdPattern = new RegExp(`^${photoId}$`);
 const shareId = "[^/]+";
 const publishedRoute = new RegExp(`^/api/a/(${shareId})(?:/media/(${photoId})/(thumb|full))?$`);
 const draftMedia = new RegExp(`^/api/draft-media/(${photoId})/(thumb|full)$`);
-const pageRoute = new RegExp(`^/(?:demo/?|manage(?:/preview)?/?|editor(?:/[^/]+)?/?|preview/[^/]+/?|a/${shareId}/?)?$`);
-const staticRoute = /^\/(?:(?:darkroom|envelope|manage|polaroid|typography)\.css|ui\/(?:[a-z-]+\.js|heic-decoder-license\.txt)|assets\/[a-z0-9.-]+\.(?:svg|webp|woff2)|samples\/[a-z0-9-]+\.webp)$/;
+const pageRoute = new RegExp(`^/(?:login/?|create/?|dashboard/?|demo/?|manage(?:/preview)?/?|editor(?:/[^/]+)?/?|preview/[^/]+/?|a/${shareId}/?)?$`);
+const staticRoute = /^\/(?:(?:darkroom|envelope|manage|platform|polaroid|typography)\.css|ui\/(?:[a-z-]+\.js|heic-decoder-license\.txt)|assets\/[a-z0-9.-]+\.(?:svg|webp|woff2)|samples\/[a-z0-9-]+\.webp)$/;
 const soundtrack = "/assets/who-knows.m4a";
 
 async function body(req, limit, tooLarge = "The file exceeds the size limit.") {
@@ -127,6 +127,7 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
   }
 
   async function requireOwner(req) {
+    if (data.platform) return data.authenticate(req);
     const token = readToken(req);
     const storedOwner = allowStoredOwner || localRequest(req);
     if (data.ownerAuthorized) {
@@ -142,6 +143,11 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
     if (writeFreeze && req.method !== "GET" && req.method !== "HEAD") throw new Problem(503, "Album updates are temporarily paused for storage maintenance.");
     const url = new URL(req.url, origin);
     const path = url.pathname;
+    if (path === "/api/platform") return send(res, 200, { enabled: !!data.platform });
+    if (path.startsWith("/api/auth/")) {
+      if (!data.auth) throw new Problem(503, "Creator accounts are not available yet. Please try again later.");
+      return send(res, 200, await data.auth.handle(req, res, path, () => jsonBody(req)));
+    }
     if (path === soundtrack && (req.method === "GET" || req.method === "HEAD")) {
       return sendAudio(req, res, await readFile(resolve(publicDir, soundtrack.slice(1))));
     }
@@ -194,6 +200,7 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
     if (req.headers.origin !== origin) throw new Problem(403, "Submit this request from the album editor.");
 
     if (path === "/api/manage/setup") {
+      if (data.platform) throw new Problem(404, "Use email verification to sign in.");
       if (!await canSetUp(req)) throw new Problem(403, "Owner setup is unavailable. Sign in to manage the album.");
       const input = await jsonBody(req);
       const supplied = input?.password;
@@ -207,6 +214,7 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
     }
 
     if (path === "/api/manage/login") {
+      if (data.platform) throw new Problem(404, "Use email verification to sign in.");
       const owner = password.length < 12 && (allowStoredOwner || localRequest(req)) ? await data.localOwner() : undefined;
       if (password.length < 12 && !owner) throw new Problem(503, "Set an owner password of at least 12 characters on the server.");
       const key = data.recordLoginAttempt
@@ -242,7 +250,9 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
     }
 
     const token = await requireOwner(req);
+    if (data.platform && path !== "/api/manage/logout") await data.auth.rateLimit("creator-write", token, 120, 60);
     if (path === "/api/manage/logout") {
+      if (data.platform) return send(res, 200, await data.auth.handle(req, res, "/api/auth/logout", () => jsonBody(req)));
       await data.deleteSession(hash(token));
       res.setHeader("Set-Cookie", cookie("", 0));
       return send(res, 200, { ok: true });
@@ -272,7 +282,7 @@ export function createHandler({ data, password = "", origin, allowLocalSetup = f
           || !revision || !/^\d+$/.test(revision)) throw new Problem(422, "This upload could not start. Choose the photo again.");
       if (data.recordUploadAttempt) await data.recordUploadAttempt(hash(token));
       if (path.endsWith("/upload-target")) {
-        return send(res, 200, await data.uploadTarget(id, Number(revision), maxBytes, albumId, replace));
+        return send(res, 200, await data.uploadTarget(id, Number(revision), maxBytes, albumId, replace, Number(url.searchParams.get("size"))));
       }
       if (await data.hasUpload(id, albumId)) {
         req.resume();
@@ -330,6 +340,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const host = process.env.HOST ?? "127.0.0.1";
   const origin = new URL(process.env.APP_ORIGIN ?? `http://127.0.0.1:${port}`).origin;
   const dbPath = resolve(process.env.ROLL_DATA_DIR ?? ".data", "album.sqlite");
-  const server = createApp({ dbPath, origin, password: process.env.OWNER_PASSWORD, allowLocalSetup: host === "127.0.0.1" });
+  const server = process.env.ALBUM_DATA_PROVIDER === "postgres"
+    ? createServer(createHandler({ data: (await import("./storage.mjs")).openStorage(), origin, writeFreeze: process.env.STORAGE_WRITE_FREEZE === "true" }))
+    : createApp({ dbPath, origin, password: process.env.OWNER_PASSWORD, allowLocalSetup: host === "127.0.0.1" });
   server.listen(port, host, () => console.log(`Film for us · ${origin}`));
 }

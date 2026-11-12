@@ -4,7 +4,7 @@ import { ui, t, errorKey } from "./ui-language.js";
 
 type AlbumSummary = { id: string; title: string; photoCount: number; status: ManageData["status"]; revision: number; shareSlug: string };
 
-export async function mountAlbumLibrary() {
+export async function mountAlbumLibrary(platform = true) {
   let { albums } = await api<{ albums: AlbumSummary[] }>("/api/editor");
   let busy = false;
   let pendingFocus: EditorFocus | undefined;
@@ -12,22 +12,27 @@ export async function mountAlbumLibrary() {
   function render(message = "", error = false) {
     pendingFocus = captureEditorFocus(app) ?? pendingFocus;
     app.innerHTML = `<section class="owner album-library">
-      <header class="owner-heading"><div><a href="/demo" class="owner-brand">Film <i>for us</i></a><h1>${ui("allAlbums")}</h1></div>
+      <header class="owner-heading"><div><a href="/" class="owner-brand">Film <i>for us</i></a><h1>${ui("myStudio")}</h1></div>
         <button type="button" class="text-button" data-library="logout">${ui("signOut")}</button></header>
-      <form class="owner-section album-create"><label>${ui("newAlbumTitle")}<input name="title" maxlength="80" required autocomplete="off" value="${esc(newTitle)}"></label>
-        <button class="action" type="submit" name="create-album">${ui("createNewAlbum")}</button></form>
+      ${platform ? `<div class="owner-section"><a class="action" href="/create">${ui("createNewAlbum")}</a></div>` : `<form class="owner-section album-create"><label>${ui("newAlbumTitle")}<input name="title" maxlength="80" required autocomplete="off" value="${esc(newTitle)}"></label><button class="action" type="submit">${ui("createNewAlbum")}</button></form>`}
       <p class="owner-feedback ${error ? "owner-feedback--error" : ""}" >${esc(message)}</p>
       <div class="album-list">${albums.length ? albums.map(album => `<article class="album-row" data-album="${album.id}">
         <div class="album-summary"><h2><a href="/editor/${album.id}">${esc(album.title || t("untitledAlbum"))}</a></h2>
           <p>${ui(album.status === "published" ? "statusPublished" : album.status === "unpublished" ? "statusUnpublished" : "statusDraft")} · ${ui("photoCount", { count: album.photoCount })}</p></div>
         <div class="album-actions"><a class="action" href="/editor/${album.id}">${ui("editAlbum")}</a>
           <a class="text-button" href="/preview/${album.id}">${ui("previewDraft")}</a>
-          ${album.status === "published" ? `<button type="button" class="text-button" data-library="copy">${ui("copyLink")}</button><button type="button" class="text-button" data-library="unpublish">${ui("unpublishAlbum")}</button>` : ""}
+          ${album.status === "published" ? `<button type="button" class="text-button" data-library="copy">${ui("copyLink")}</button><button type="button" class="text-button" data-library="unpublish">${ui("unpublishAlbum")}</button>` : `<button type="button" class="text-button" data-library="publish">${ui("publish")}</button>`}
           <button type="button" class="text-button danger-action" data-library="delete">${ui("deleteAlbum")}</button></div>
-      </article>`).join("") : `<p class="owner-empty">${ui("noAlbums")}</p>`}</div>
+      </article>`).join("") : `<div class="studio-empty"><p>${ui("studioEmpty")}</p><a class="action" href="/create">${ui("firstMemory")}</a></div>`}</div>
     </section>`;
     if (message) announce(message);
     if (!busy) { restoreEditorFocus(app, pendingFocus); pendingFocus = undefined; }
+  }
+  if (!platform) {
+    app.addEventListener("input", event => { const input = event.target as HTMLInputElement; if (input.name === "title") newTitle = input.value; });
+    app.addEventListener("submit", event => { event.preventDefault(); const title = new FormData(event.target as HTMLFormElement).get("title"); void run(async () => {
+      const result = await postJSON<ManageData>("/api/editor/create", { title }); location.assign(`/editor/${result.shareId}`);
+    }); });
   }
   async function run(work: () => Promise<void>) {
     if (busy) return;
@@ -45,19 +50,6 @@ export async function mountAlbumLibrary() {
       restoreEditorFocus(app, pendingFocus); pendingFocus = undefined;
     }
   }
-  app.addEventListener("input", event => {
-    const input = event.target as HTMLInputElement;
-    if (input.name === "title") newTitle = input.value;
-  });
-  app.addEventListener("submit", event => {
-    event.preventDefault();
-    const form = event.target as HTMLFormElement;
-    const title = new FormData(form).get("title");
-    void run(async () => {
-      const result = await postJSON<ManageData>("/api/editor/create", { title });
-      location.assign(`/editor/${result.shareId}`);
-    });
-  });
   app.addEventListener("click", event => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-library]");
     if (!button || busy) return;
@@ -77,6 +69,11 @@ export async function mountAlbumLibrary() {
       await postJSON(`/api/editor/${album.id}/unpublish`, { revision: album.revision });
       albums = (await api<{ albums: AlbumSummary[] }>("/api/editor")).albums;
       render(t("albumUnpublishedSaved"));
+    });
+    if (action === "publish") void run(async () => {
+      await postJSON(`/api/editor/${album.id}/publish`, { revision: album.revision });
+      albums = (await api<{ albums: AlbumSummary[] }>("/api/editor")).albums;
+      render(t("albumPublished"));
     });
     if (action === "delete") {
       pendingFocus = captureEditorFocus(app);

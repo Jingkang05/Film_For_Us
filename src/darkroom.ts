@@ -11,6 +11,7 @@ import { envelopeMotion } from "./envelope-config.js";
 import { createEnvelopeOpening } from "./envelope-motion.js";
 import { loadViewerLikes, saveViewerLikes } from "./viewer-likes.js";
 import { viewerCollection } from "./viewer-collection.js";
+import { navigateAccount } from "./platform.js";
 
 const scenes = ["envelope", "letter", "table", "film", "instant", "tray", "line"] as const;
 type Scene = typeof scenes[number];
@@ -646,6 +647,7 @@ export function mountDarkroom(album: MemoryProject, preview: boolean) {
       <header class="scene-bar"><span>SCENE ${count(step)} <span class="scene-divider">—</span> ${sceneLabel}</span>
         <span>${preview ? "DRAFT · " : album.demo ? "DEMO · " : ""}${status}</span></header>
       <div class="stage">${stage}</div>
+      ${scene === "line" && !preview ? `<aside class="memory-invitation"><p>${ui("createInvitation")}</p><a href="/login?next=/create" data-create-memory>${ui("createOwnMemory")}</a></aside>` : ""}
       <footer class="scene-foot">
         ${scene === "tray" && development === "ready"
           ? `<div class="hang-prompt"><p class="stage-hint">${hint}</p><button class="action" type="button" data-action="hang">${ui("hangPrint")}</button></div>`
@@ -661,6 +663,10 @@ export function mountDarkroom(album: MemoryProject, preview: boolean) {
       </footer>
     </section>`;
     app.querySelector(".scene-actions")!.append(musicControl);
+    app.querySelector<HTMLAnchorElement>("[data-create-memory]")?.addEventListener("click", event => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault(); void navigateAccount("/create");
+    });
     if (scene === "envelope") {
       announce("");
       envelopeOpening = createEnvelopeOpening(app.querySelector<HTMLElement>(".envelope")!, revealLetter);

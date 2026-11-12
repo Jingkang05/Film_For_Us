@@ -49,11 +49,12 @@ export function createR2Storage({ bucket, endpoint, credentials, region = "auto"
       const r = await send("list", new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken: cursor, MaxKeys: limit }));
       return { objects: (r.Contents ?? []).map(o => ({ key: o.Key, size: o.Size, etag: o.ETag })), cursor: r.NextContinuationToken };
     },
-    async signUpload(key, { expiresIn = 120 } = {}) {
+    async signUpload(key, { expiresIn = 120, contentLength } = {}) {
       if (!Number.isInteger(expiresIn) || expiresIn < 1 || expiresIn > 300) throw new Error("Upload expiry exceeds policy.");
       const headers = { "Content-Type": "application/octet-stream", "If-None-Match": "*" };
-      const url = await signer(s3, new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: headers["Content-Type"], IfNoneMatch: "*" }),
-        { expiresIn, signableHeaders: new Set(["content-type", "if-none-match"]) });
+      if (contentLength !== undefined && (!Number.isSafeInteger(contentLength) || contentLength < 1 || contentLength > 20 * 1024 ** 2)) throw new Error("Invalid upload content length.");
+      const url = await signer(s3, new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: headers["Content-Type"], IfNoneMatch: "*", ContentLength: contentLength }),
+        { expiresIn, signableHeaders: new Set(["content-type", "if-none-match", ...(contentLength === undefined ? [] : ["content-length"])]) });
       return { url, headers };
     },
   };
