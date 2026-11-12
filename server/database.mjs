@@ -1,4 +1,9 @@
 import pg from "pg";
+import { readFileSync } from "node:fs";
+import { rootCertificates } from "node:tls";
+
+// Public CA downloaded from the project's Supabase SSL settings.
+const supabaseCA = readFileSync(new URL("./certs/supabase-prod-ca-2021.crt", import.meta.url), "utf8");
 import { Problem } from "./album.mjs";
 
 export function openDatabase(config) {
@@ -6,7 +11,7 @@ export function openDatabase(config) {
   // Connection-string SSL flags otherwise override pg's explicit TLS options.
   for (const key of ["sslmode", "sslcert", "sslkey", "sslrootcert"]) database.searchParams.delete(key);
   const pool = new pg.Pool({ connectionString: database.toString(), max: 3, idleTimeoutMillis: 10000,
-    connectionTimeoutMillis: 8000, ssl: { rejectUnauthorized: true }, allowExitOnIdle: true });
+    connectionTimeoutMillis: 8000, ssl: { rejectUnauthorized: true, ca: [...rootCertificates, supabaseCA] }, allowExitOnIdle: true });
   pool.on("error", () => console.error("Database connection failed."));
   return {
     pool,
