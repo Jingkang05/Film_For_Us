@@ -90,26 +90,48 @@ function editor(initial: ManageData, platform = true) {
     }
   }
 
+  const viewKey = `ffu:editor-view:${data.shareId}`;
+  let selectedId = data.album.rolls.flatMap(roll => roll.photos)[0]?.id;
+  let settingsOpen = false;
+  let returnScroll: number | undefined;
+  try {
+    const view = JSON.parse(sessionStorage.getItem(viewKey) || "null");
+    if (view) { selectedId = view.selectedId; returnScroll = view.scroll; settingsOpen = !!view.settingsOpen; }
+    sessionStorage.removeItem(viewKey);
+  } catch { /* Editing also works without session storage. */ }
+
   function rollFields(roll: Roll, index: number) {
     return `<fieldset class="owner-roll"><legend>${ui("rollNumber", { number: index + 1 })} <small>${photoCount(roll.photos.length)}</small></legend>
       <div class="roll-fields"><label>${ui("rollName")}<input name="roll-name" data-roll="${roll.id}" maxlength="40" value="${esc(roll.name)}"></label>
       <label>${ui("labelColor")}<input type="color" name="roll-color" data-roll="${roll.id}" value="${esc(roll.color)}"></label></div>
-      ${roll.photos.length ? roll.photos.map((photo, i) => `<article class="owner-photo" data-photo="${photo.id}">
-        <img src="${esc(photo.thumb)}" ${uiAttr("photoNumber", { number: i + 1 }, "alt")} loading="lazy">
-        <div class="owner-photo-fields">
-          <label>${ui("photoDate")}<input type="date" name="date" data-id="${photo.id}" value="${esc(photo.date)}"></label>
-          <label>${ui("photoNote")}<textarea name="note" dir="auto" data-id="${photo.id}" maxlength="600" rows="2">${esc(photo.note)}</textarea></label>
-          <div class="owner-photo-actions">
-            <label>${ui("moveRoll")}<select name="move" data-id="${photo.id}">
-              ${data.album.rolls.map((item, j) => `<option value="${item.id}" ${item.id === roll.id ? "selected" : ""}>${esc(item.name || `Roll ${j + 1}`)}</option>`).join("")}
-            </select></label>
-            <button type="button" class="icon-button" data-action="up" data-id="${photo.id}" ${uiAttr("moveUp", { number: i + 1 })} ${i === 0 ? "disabled" : ""}>${icon("up")}</button>
-            <button type="button" class="icon-button" data-action="down" data-id="${photo.id}" ${uiAttr("moveDown", { number: i + 1 })} ${i === roll.photos.length - 1 ? "disabled" : ""}>${icon("down")}</button>
-            <button type="button" class="text-button" data-action="remove" data-id="${photo.id}">${ui("remove")}</button>
-            <label class="replace-photo">${ui("replacePhoto")}<input type="file" name="replace" data-id="${photo.id}" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"></label>
-          </div>
-        </div>
-      </article>`).join("") : `<p class="owner-empty">${ui("emptyRoll")}</p>`}</fieldset>`;
+      <div class="photo-grid">${roll.photos.map((photo, i) => `<article class="owner-photo" data-photo="${photo.id}">
+        <button type="button" class="photo-select" data-action="select-photo" data-id="${photo.id}" aria-pressed="${photo.id === selectedId}" aria-controls="selected-photo-editor" ${uiAttr("editPhoto", { number: i + 1, roll: roll.name || `Roll ${index + 1}` })}>
+          <span class="photo-image"><img src="${esc(photo.thumb)}" alt="" loading="lazy" draggable="false"></span>
+          <span class="photo-index"><span>${String(i + 1).padStart(2, "0")}</span><span>${esc(photo.date)}</span></span>
+        </button>
+      </article>`).join("")}</div>
+      ${roll.photos.length ? "" : `<p class="owner-empty">${ui("emptyRoll")}</p>`}</fieldset>`;
+  }
+
+  function selectedPhotoEditor() {
+    const match = selectedId && photoLocation(selectedId);
+    if (!match) return `<aside id="selected-photo-editor" class="photo-inspector"><h3>${ui("photoDetails")}</h3><p class="owner-empty">${ui("selectPhotoHelp")}</p></aside>`;
+    const { photo, roll, index } = match;
+    return `<aside id="selected-photo-editor" class="photo-inspector" aria-labelledby="photo-details-title">
+      <div class="inspector-heading"><h3 id="photo-details-title" tabindex="-1">${ui("photoNumber", { number: index + 1 })}</h3><a class="text-button" href="#photo-collection">${ui("backPhotos")}</a></div>
+      <img class="inspector-image" src="${esc(photo.thumb)}" ${uiAttr("photoNumber", { number: index + 1 }, "alt")}>
+      <div class="owner-photo-fields">
+        <label>${ui("photoDate")}<input type="date" name="date" data-id="${photo.id}" value="${esc(photo.date)}"></label>
+        <label>${ui("photoNote")}<textarea name="note" dir="auto" data-id="${photo.id}" maxlength="600" rows="5">${esc(photo.note)}</textarea></label>
+        <label>${ui("moveRoll")}<select name="move" data-id="${photo.id}">${data.album.rolls.map((item, j) => `<option value="${item.id}" ${item.id === roll.id ? "selected" : ""}>${esc(item.name || `Roll ${j + 1}`)}</option>`).join("")}</select></label>
+        <div class="photo-order"><span>${ui("photoOrder")}</span><div>
+          <button type="button" class="icon-button" data-action="up" data-id="${photo.id}" ${uiAttr("moveUp", { number: index + 1 })} ${index === 0 ? "disabled" : ""}>${icon("up")}</button>
+          <button type="button" class="icon-button" data-action="down" data-id="${photo.id}" ${uiAttr("moveDown", { number: index + 1 })} ${index === roll.photos.length - 1 ? "disabled" : ""}>${icon("down")}</button>
+        </div></div>
+        <label class="replace-photo">${ui("replacePhoto")}<input type="file" name="replace" data-id="${photo.id}" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"></label>
+        <button type="button" class="text-button danger-action" data-action="remove" data-id="${photo.id}">${ui("remove")}</button>
+      </div>
+    </aside>`;
   }
 
   function uploadModule() {
@@ -142,20 +164,23 @@ function editor(initial: ManageData, platform = true) {
     pendingFocus = captureEditorFocus(app) ?? pendingFocus;
     const share = `${location.origin}/a/${encodeURIComponent(data.shareSlug || data.shareId)}`;
     const published = data.status === "published";
-    app.innerHTML = `<section class="owner">
+    if (!selectedId || !photoLocation(selectedId)) selectedId = data.album.rolls.flatMap(roll => roll.photos)[0]?.id;
+    app.innerHTML = `<section class="owner album-editor">
       <header class="owner-heading"><div><a href="/demo" class="owner-brand">Film <i>for us</i></a><h1>${ui("albumEditor")}</h1></div>
-        <button class="text-button" data-action="logout" type="button">${ui("signOut")}</button></header>
-      <a href="${platform ? "/dashboard" : "/editor"}" class="text-button">${icon("left")} ${ui("backStudio")}</a>
-      <div class="owner-toolbar">
-        <p id="revision-status">${dirty ? ui("unsaved") : ui("draftVersion", { version: data.revision })} · ${published ? ui("publishedVersion", { version: data.publishedRevision! }) : ui("unpublished")}</p>
-        <div><a class="text-button" href="#upload">${ui("uploadPhotos")}</a>
+        <div class="editor-navigation"><a href="${platform ? "/dashboard" : "/editor"}" class="text-button">${icon("left")} ${ui("backStudio")}</a>
+        <button class="text-button" data-action="logout" type="button">${ui("signOut")}</button></div></header>
+      <div class="owner-toolbar" role="group" ${uiAttr("publishingActions")}>
+        <div class="toolbar-context"><span class="editor-album-title">${esc(data.album.title)}</span><span class="publication-state">${published ? ui("publishedVersion", { version: data.publishedRevision! }) : ui("unpublished")}</span></div>
+        <div class="toolbar-actions"><p id="revision-status" role="status">${busy ? ui("working") : dirty ? ui("unsaved") : ui("draftVersion", { version: data.revision })}</p>
           <button type="button" class="text-button" data-action="preview">${ui("previewDraft")} ${icon("right")}</button>
           <button type="button" class="action" data-action="save">${ui("saveDraft")}</button>
           <button type="button" class="action action--publish" data-action="publish">${ui("publish")}</button></div>
+      </div>
+      <div class="publishing-feedback">
         <p id="owner-status" class="owner-feedback ${messageError ? "owner-feedback--error" : ""}" >${feedback}</p>
         ${published ? `<div class="share-field"><label>${ui("shareLink")}<input readonly value="${esc(share)}"></label><button type="button" class="action" data-action="copy">${ui("copyLink")}</button><a class="text-button" href="${esc(share)}">${ui("viewPublished")}</a></div>` : ""}
       </div>
-      <section class="owner-section"><h2>${ui("openingLetter")}</h2>
+      <section class="owner-section album-details"><h2>${ui("albumDetails")}</h2>
         <label>${ui("albumTitle")}<input name="title" value="${esc(data.album.title)}" maxlength="80"></label>
         <label>${ui("yourLetter")}<textarea name="letter" dir="auto" rows="6" maxlength="2000" ${uiAttr("letterPlaceholder", {}, "placeholder")}>${esc(data.album.letter)}</textarea></label>
       </section>
@@ -170,23 +195,25 @@ function editor(initial: ManageData, platform = true) {
         <p class="slug-preview"><span>${ui("linkAfterPublish")}</span><span id="slug-preview" dir="ltr"></span></p>
         <p class="owner-empty">${ui("slugPublishHint")}</p>
       </section>
-      <section class="owner-section"><h2>${ui("templateSettings")}</h2>
+      <details class="owner-section template-settings" ${settingsOpen ? "open" : ""}><summary>${ui("templateSettings")}</summary><div class="template-fields">
         <label>${ui("description")}<textarea name="description" rows="2" maxlength="2000">${esc(data.album.description ?? "")}</textarea></label>
         <label>${ui("instantCaption")}<textarea name="instant-caption" rows="2" maxlength="600">${esc(data.album.ending!.instantCaption)}</textarea></label>
         <label>${ui("sealMotif")}<select name="seal-motif"><option value="rose" data-ui="sealRose" ${data.album.settings!.sealMotif === "rose" ? "selected" : ""}>${esc(t("sealRose"))}</option><option value="branch" data-ui="sealBranch" ${data.album.settings!.sealMotif === "branch" ? "selected" : ""}>${esc(t("sealBranch"))}</option></select></label>
         <label>${ui("soundtrackTitle")}<input name="music-title" maxlength="160" value="${esc(data.album.settings!.music.title)}"></label>
         <p class="owner-empty">${ui("soundtrackHelp")}</p>
+      </div></details>
+      <section id="photo-collection" class="owner-section owner-rolls" aria-labelledby="collection-heading">
+        <div class="collection-heading"><div><h2 id="collection-heading">${ui("photoCollection")}</h2><p class="owner-empty">${ui("collectionHelp")}</p></div><a class="text-button" href="#upload">${icon("upload")} ${ui("uploadPhotos")}</a></div>
+        <div class="collection-layout"><div class="contact-sheet">${data.album.rolls.map(rollFields).join("")}</div>${selectedPhotoEditor()}</div>
       </section>
       ${uploadModule()}
-      <section class="owner-section owner-rolls"><h2>${ui("rollsPhotos")}</h2>
-        ${data.album.rolls.map(rollFields).join("")}
-      </section>
     </section>`;
     app.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[name=title], input[name=roll-name], textarea').forEach((field) => {
       setChineseTypography(field, field.value);
     });
     refreshUI(app);
     updateLinkPreview();
+    app.querySelector(".template-settings")?.addEventListener("toggle", event => { settingsOpen = (event.target as HTMLDetailsElement).open; });
     if (busy) lockControls();
     else { restoreEditorFocus(app, pendingFocus); pendingFocus = undefined; }
   }
@@ -198,6 +225,9 @@ function editor(initial: ManageData, platform = true) {
   function markDirty() {
     dirty = true;
     setUIText(app.querySelector("#revision-status")!, "unsaved");
+    notice("");
+    const title = app.querySelector(".editor-album-title");
+    if (title) title.textContent = data.album.title;
   }
 
   function updateLinkPreview() {
@@ -253,6 +283,8 @@ function editor(initial: ManageData, platform = true) {
     if (busy) return;
     pendingFocus = captureEditorFocus(app) ?? pendingFocus;
     busy = true;
+    setUIText(app.querySelector("#revision-status")!, "working");
+    app.querySelector(".owner-toolbar")?.setAttribute("aria-busy", "true");
     lockControls();
     try { await work(); }
     catch (error) {
@@ -367,6 +399,13 @@ function editor(initial: ManageData, platform = true) {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-action]");
     if (!button || busy) return;
     const { action, id } = button.dataset;
+    if (action === "select-photo" && id) {
+      selectedId = id;
+      render();
+      const panel = app.querySelector<HTMLElement>("#selected-photo-editor")!;
+      if (matchMedia("(max-width: 959px)").matches) panel.scrollIntoView({ block: "start" });
+      panel.querySelector<HTMLElement>("#photo-details-title")?.focus({ preventScroll: true });
+    }
     if (action === "slug-title") {
       const slug = shareSlugFromTitle(data.album.title);
       if (!slug) { notice(ui("slugTitleEmpty"), true); return; }
@@ -378,7 +417,12 @@ function editor(initial: ManageData, platform = true) {
       field.focus();
     }
     if (action === "save") void run(async () => { await save(); notice(ui("draftSaved")); });
-    if (action === "preview") void run(async () => { await save(); busy = false; location.assign(`/preview/${data.shareId}`); });
+    if (action === "preview") void run(async () => {
+      await save();
+      try { sessionStorage.setItem(viewKey, JSON.stringify({ selectedId, scroll: scrollY, settingsOpen })); } catch { /* Optional view restoration. */ }
+      busy = false;
+      location.assign(`/preview/${data.shareId}`);
+    });
     if (action === "publish") void run(async () => {
       await save();
       data = await postJSON<ManageData>(`${endpoint}/publish`, { revision: data.revision });
@@ -412,6 +456,7 @@ function editor(initial: ManageData, platform = true) {
       const match = photoLocation(id);
       if (!match) return;
       const { roll, index, photo } = match;
+      if (action === "up" && index === 0 || action === "down" && index === roll.photos.length - 1) return;
       if (action === "remove" && !confirm(t("removePhotoConfirm"))) return;
       roll.photos.splice(index, 1);
       if (action !== "remove") roll.photos.splice(index + (action === "up" ? -1 : 1), 0, photo);
@@ -423,5 +468,6 @@ function editor(initial: ManageData, platform = true) {
     if (dirty || busy || uploads.some(item => item.state !== "uploaded")) event.preventDefault();
   });
   render();
+  if (returnScroll !== undefined) requestAnimationFrame(() => scrollTo(0, returnScroll!));
   if (location.hash === "#upload") document.getElementById("upload")?.scrollIntoView();
 }

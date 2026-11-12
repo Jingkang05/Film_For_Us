@@ -1,0 +1,16 @@
+{
+  "checks": [
+    "create album through real local account and template flow",
+    "upload queue, error feedback, retry and three larger thumbnails",
+    "selection preserves unsaved captions, dates and keyboard access",
+    "save failure keeps draft and blocks preview navigation until retry",
+    "within-roll order, category moves and replacement preserve IDs and metadata",
+    "save, refresh, settings and metadata round trip",
+    "real private viewer saves changes, stays unpublished and restores editor position",
+    "desktop, tablet, mobile and bilingual layout have no overflow",
+    "publish, copy and existing share stay unchanged when editing draft",
+    "iPhone WebKit contact sheet and touch-sized actions"
+  ],
+  "errors": [],
+  "synthetic": true
+}

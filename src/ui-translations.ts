@@ -1,5 +1,14 @@
 // UI copy only. Album text, captions, names and decorative labels never enter this dictionary.
 export const zh = {
+  albumDetails: "相册信息",
+  photoCollection: "照片集合",
+  collectionHelp: "选择一张照片，编辑日期、故事与胶卷分类。",
+  photoDetails: "照片详情",
+  selectPhotoHelp: "上传照片后，在这里编辑它的故事。",
+  editPhoto: "编辑{roll}的第 {number} 张照片",
+  photoOrder: "胶卷内排序",
+  backPhotos: "返回照片集合",
+  publishingActions: "保存、预览与发布",
   myStudio: "我的工作室",
   createMemory: "创建一段回忆",
   firstMemory: "创建你的第一段回忆",
@@ -283,6 +292,15 @@ export const zh = {
 export type UIKey = keyof typeof zh;
 export type UILanguage = "zh" | "en";
 export const en: Record<UIKey, string> = {
+  albumDetails: "Album details",
+  photoCollection: "Photo collection",
+  collectionHelp: "Select a photograph to edit its date, story and roll.",
+  photoDetails: "Photo details",
+  selectPhotoHelp: "Upload a photograph to start telling its story here.",
+  editPhoto: "Edit photo {number} in {roll}",
+  photoOrder: "Order within roll",
+  backPhotos: "Back to photos",
+  publishingActions: "Save, preview and publish",
   myStudio: "My Studio",
   createMemory: "Create a Memory",
   firstMemory: "Create Your First Memory",
