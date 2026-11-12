@@ -39,20 +39,21 @@ body:has(.viewer-menu-toggle) .scene-bar { padding-right: max(10.5rem, calc(env(
 @media (max-width: 540px) { .template-choice { grid-template-columns: 1fr; gap: 1.25rem; } .template-choice img { max-height: 155px; } }
 
 /* Shared envelope guidance; official entry alone includes the opening CTA. */
+.darkroom--envelope .stage {
+  min-height: min-content;
+}
 .envelope-guidance {
   display: grid;
   justify-items: center;
   justify-self: center;
-  gap: 1rem;
+  gap: 2rem;
   width: min(100%, 32rem);
-  margin: clamp(1.5rem, 4vh, 2.5rem) auto 1rem;
+  margin: clamp(4rem, 12vh, 7rem) auto 1rem;
   padding-inline: 1.25rem;
   text-align: center;
 }
 .envelope-guidance .stage-hint {
   margin: 0;
-  font-size: clamp(1.2rem, 2vw, 1.5rem);
-  line-height: 1.3;
 }
 /* One glass component for the opening and every album's ending invitation. */
 .memory-create-cta {
@@ -125,6 +126,9 @@ body:has(.viewer-menu-toggle) .scene-bar { padding-right: max(10.5rem, calc(env(
 @media (forced-colors: active) {
   .memory-create-cta { border: 1px solid ButtonText; }
 }
-@media (max-width: 600px) {
-  .envelope-guidance { margin-top: 1.5rem; gap: .85rem; }
+@media (min-width: 701px) and (min-height: 760px) {
+  .darkroom--envelope .stage { padding-block-start: 3rem; }
+}
+@media (max-width: 700px) {
+  .envelope-guidance { margin-top: clamp(6rem, 15vh, 8rem); }
 }
