@@ -7,7 +7,7 @@
 body:has(.viewer-menu-toggle) > .language-switcher { right: max(4rem, calc(env(safe-area-inset-right) + 3.4rem)); }
 body:has(.viewer-menu-toggle) .scene-bar { padding-right: max(10.5rem, calc(env(safe-area-inset-right) + 10rem)); }
 .viewer-menu-toggle:hover { background: #3c2119; }
-.viewer-menu-toggle:focus-visible, .viewer-menu a:focus-visible, .memory-invitation a:focus-visible { outline: 2px solid #f2c298; outline-offset: 4px; }
+.viewer-menu-toggle:focus-visible, .viewer-menu a:focus-visible { outline: 2px solid #f2c298; outline-offset: 4px; }
 .viewer-menu {
   position: fixed; inset: 0 0 0 auto; width: min(360px, 90vw); height: 100dvh; max-height: 100dvh; max-width: 100vw;
   margin: 0; padding: max(1.25rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) 2rem;
@@ -22,7 +22,6 @@ body:has(.viewer-menu-toggle) .scene-bar { padding-right: max(10.5rem, calc(env(
 .viewer-menu .language-switcher { top: auto; bottom: max(1rem, env(safe-area-inset-bottom)); right: 1.5rem; }
 .memory-invitation { position: relative; margin: 1.5rem auto; padding: .75rem 1.5rem; text-align: center; color: #dbba91; }
 .memory-invitation p { margin: 0 0 .5rem; font-family: var(--reading); }
-.memory-invitation a { display: inline-block; min-height: 44px; padding: .7rem .2rem; color: #ead8bd; text-underline-offset: .3em; }
 .platform-login > h1 { margin-top: 2rem; }
 .platform-login > p { color: #dbba91; line-height: 1.7; }
 .platform-login form { margin-block: 2rem; }
@@ -39,13 +38,24 @@ body:has(.viewer-menu-toggle) .scene-bar { padding-right: max(10.5rem, calc(env(
 .studio-empty p { margin-bottom: 1.5rem; color: #dbba91; }
 @media (max-width: 540px) { .template-choice { grid-template-columns: 1fr; gap: 1.25rem; } .template-choice img { max-height: 155px; } }
 
-/* Official sample entry only; envelope geometry and motion stay untouched. */
-.demo-opening-invitation {
+/* Shared envelope guidance; official entry alone includes the opening CTA. */
+.envelope-guidance {
+  display: grid;
+  justify-items: center;
   justify-self: center;
-  margin: clamp(2rem, 5vh, 3.5rem) 1rem 1rem;
+  gap: 1rem;
+  width: min(100%, 32rem);
+  margin: clamp(1.5rem, 4vh, 2.5rem) auto 1rem;
+  padding-inline: 1.25rem;
   text-align: center;
 }
-.demo-opening-invitation a {
+.envelope-guidance .stage-hint {
+  margin: 0;
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  line-height: 1.3;
+}
+/* One glass component for the opening and every album's ending invitation. */
+.memory-create-cta {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -69,7 +79,7 @@ body:has(.viewer-menu-toggle) .scene-bar { padding-right: max(10.5rem, calc(env(
   transition: transform 180ms ease, background-color 180ms ease,
     border-color 180ms ease, box-shadow 180ms ease;
 }
-.demo-opening-invitation a::before {
+.memory-create-cta::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -79,14 +89,14 @@ body:has(.viewer-menu-toggle) .scene-bar { padding-right: max(10.5rem, calc(env(
   background: linear-gradient(165deg, rgba(255, 242, 218, .12), rgba(255, 242, 218, .025) 46%, transparent 62%);
 }
 @supports ((-webkit-backdrop-filter: blur(12px)) or (backdrop-filter: blur(12px))) {
-  .demo-opening-invitation a {
+  .memory-create-cta {
     background-color: rgba(100, 77, 58, .23);
     -webkit-backdrop-filter: blur(12px) saturate(110%);
     backdrop-filter: blur(12px) saturate(110%);
   }
 }
 @media (hover: hover) and (pointer: fine) {
-  .demo-opening-invitation a:hover {
+  .memory-create-cta:hover {
     transform: translateY(-1px);
     background-color: rgba(100, 77, 58, .38);
     border-color: rgba(242, 223, 192, .43);
@@ -95,26 +105,26 @@ body:has(.viewer-menu-toggle) .scene-bar { padding-right: max(10.5rem, calc(env(
     text-decoration: none;
   }
 }
-.demo-opening-invitation a:active {
+.memory-create-cta:active {
   transform: translateY(1px) scale(.99);
   background-color: rgba(100, 77, 58, .5);
   box-shadow: inset 0 1px 3px rgba(11, 7, 6, .24);
 }
-.demo-opening-invitation a:focus-visible {
+.memory-create-cta:focus-visible {
   outline: 2px solid var(--light, #f2dfc0);
   outline-offset: 4px;
   text-decoration: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .demo-opening-invitation a { transition: none; }
-  .demo-opening-invitation a:hover, .demo-opening-invitation a:active { transform: none; }
+  .memory-create-cta { transition: none; }
+  .memory-create-cta:hover, .memory-create-cta:active { transform: none; }
 }
 @media (prefers-contrast: more) {
-  .demo-opening-invitation a { background: #382a22; border-color: var(--light, #f2dfc0); }
+  .memory-create-cta { background: #382a22; border-color: var(--light, #f2dfc0); }
 }
 @media (forced-colors: active) {
-  .demo-opening-invitation a { border: 1px solid ButtonText; }
+  .memory-create-cta { border: 1px solid ButtonText; }
 }
 @media (max-width: 600px) {
-  .demo-opening-invitation { margin-top: 1.75rem; }
+  .envelope-guidance { margin-top: 1.5rem; gap: .85rem; }
 }
