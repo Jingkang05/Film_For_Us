@@ -101,3 +101,9 @@ The feature-branch Preview is currently an isolated browser-memory UI demonstrat
 ## Demo-first opening
 
 The live root was inspected before implementation: `/` and `/demo` load independent public sample content from `/api/demo` (`id: demo`). Only these official entry routes show the subtle Create Your Own Memory link beneath the sealed envelope. Personal `/a/...` routes and draft previews never receive the opening CTA, even when their content has a demo flag. The button reuses account-aware navigation; the envelope, viewer sidebar and ending invitation remain functional. No private album/media was copied into the sample.
+
+## Protected authentication stage before import
+
+For connectivity and administrator sign-in before migration, create a clean deployment of the reviewed commit using the **Production target with `--skip-domain`** and deployment-only overrides `PHASE4_AUTH_STAGING=true` and `ALBUM_DATA_PROVIDER=postgres`. The project-level provider and live app stay `legacy`. Never pass Production credentials through a Preview deployment or command-line arguments. The stage inherits its Production credentials server-side.
+
+This mode uses its own `VERCEL_URL` as origin and blocks all album/editor/media/upload/publication APIs before storage initialization. Only authentication, the public sample and platform status are available. `GET /api/release-preflight` performs read-only configuration, database/RLS and Auth health checks and returns booleans only; it is unavailable on normal deployments. Use Vercel-authenticated access. No private albums are imported or exposed on this stage. Have the administrator enter a fresh eight-digit OTP in the application, then verify the active encrypted app session without printing tokens. This is a pre-migration authentication stage, not the production cutover build.
