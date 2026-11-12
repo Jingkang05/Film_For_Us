@@ -23,6 +23,7 @@ test("project environment isolation rejects production credentials in developmen
   assert.throws(()=>platformConfig({...env,SUPABASE_ENVIRONMENT:"production"}),/must match/);
   assert.throws(()=>platformConfig({...env,DATABASE_URL:`postgresql://postgres.${ref}:secret@aws-0-ap-south-1.pooler.supabase.com:6543/postgres`}),/belong/);
   assert.throws(()=>platformConfig({...env,SUPABASE_PUBLISHABLE_KEY:"sb_secret_forbidden"}),/publishable/);
+  assert.throws(()=>platformConfig({...env,DATABASE_URL:"synthetic-private-password-invalid-url"}),error=>error.message==="Invalid DATABASE_URL." && !error.input);
 });
 test("OTP registration/login, invalid/expired/replayed codes, encrypted persistent sessions, revocation, CSRF and migration",async t=>{
   const db=await postgresFixture();t.after(()=>db.close());
