@@ -2,7 +2,11 @@
 
 ## Current release status
 
-Implementation is on `codex/phase-4-supabase-multi-user`. Film For Us Supabase project: `lppysxtcvuphvynrvtyr`, Mumbai (`ap-south-1`). Resend custom SMTP is configured and a real eight-digit Supabase OTP email was delivered to the user-approved Gmail mailbox. The intended administrator email has been explicitly supplied privately; verified application-session ownership association remains pending. Live R2 metadata has not been imported. Production remains on its functioning legacy R2 implementation. Never declare release gates passed from local synthetic tests alone.
+Phase 4 release configuration and migration were verified on 12 November 2026 on `codex/phase-4-supabase-multi-user`. Film For Us Supabase project: `lppysxtcvuphvynrvtyr`, Mumbai (`ap-south-1`). Real eight-digit OTP login, a ten-minute expiry configuration, encrypted application sessions, explicit administrator identity and the legacy password proof passed. A fresh private R2 backup and readback preceded the verified import of two albums and 35 photos. PostgreSQL was selected only after import verification; the legacy R2 source deployment is write-frozen. The candidate preserves both existing public payloads and sampled thumbnail bytes exactly.
+
+The final protected candidate passed Create, Save Draft, three signed R2 uploads, private Preview, Publish, Studio listing, test-album soft deletion and logout using only public sample images. No legacy media was moved or deleted. Temporary migration password/identity environment variables were removed. Normal builds do not run operator jobs. The final public deployment outcome is recorded in [PR #3](https://github.com/Jingkang05/Film_For_Us/pull/3).
+
+The user canceled further development configuration and requested Production release. The unused development project is paused; no development SMTP or R2 credentials were copied. Hosted development adversarial tests, QQ/163/Outlook delivery, mainland connectivity and physical iPhone testing are not claimed. Local two-user PostgreSQL/RLS tests and desktop/mobile browser checks passed.
 
 ## Configure Supabase
 

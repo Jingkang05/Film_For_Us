@@ -2,7 +2,7 @@
 
 ## Result and limits
 
-Phase 4 code is implemented on `codex/phase-4-supabase-multi-user`; Production cutover is **not complete**. The existing website was not redeployed, frozen, or switched to PostgreSQL. No production R2 object was overwritten or deleted. The user's five existing typography/CSS/font-script modifications remain separate from the implementation.
+Phase 4 code and the Production release candidate are verified on `codex/phase-4-supabase-multi-user`. The release execution below supersedes the initial setup status. Existing R2 albums and media were preserved; the user's five unrelated typography/CSS/font-script modifications remain separate. The final public deployment outcome is recorded in [PR #3](https://github.com/Jingkang05/Film_For_Us/pull/3).
 
 Dedicated Film For Us Supabase project `lppysxtcvuphvynrvtyr` now has two additive migrations matching local filenames and hosted migration history:
 
@@ -53,17 +53,18 @@ Exactly two sampled thumbnail GETs returned 200, `image/webp`, `private, no-cach
 
 No production media scan or additional Blob request was made. Original pending-recovery records remain a reported gap; this phase does not claim to recover missing photos.
 
-## Remaining release gates
+## Release execution — 12 November 2026
 
-- Resend domain/custom SMTP and Gmail OTP delivery are verified. Actual QQ/163/Outlook delivery remains pending.
-- Production server credentials, encryption key and isolated Preview configuration.
-- Explicit administrator email and verified UUID, active OTP application session and legacy administrator proof.
-- Fresh private R2 backup under a verified live write freeze; import, byte/content/path/alias validation and staged cutover.
-- Hosted two-user adversarial tests, real signed-R2 upload with content-length enforcement, session refresh/revocation and end-to-end release checks.
-- Real Safari/iPhone and mainland-China network testing; neither is claimed by Chromium mobile emulation.
-- Required CI checks and final staged deployment/log checks before merge or production promotion.
+- Production-only variables verified; the first real connection exposed a missing CA trust anchor, fixed with the official public Supabase root while retaining certificate and hostname verification.
+- Real user-entered eight-digit OTP established a confirmed identity and active encrypted application session. The operator job separately verified the existing salted legacy administrator password and exact identity association.
+- The unchanged stable R2 build was promoted with writes frozen. Live writes returned 503 while public viewing remained available. Five minutes drained previous requests before export.
+- The protected, non-HTTP operator build created and read back a private immutable R2 backup and manifest, imported two albums / 35 photos, and verified content, IDs, revisions and upload inventory. Both draft and published photo projections initially contained 35 photos. Every imported album belongs to the verified administrator. No prior PostgreSQL album was overwritten.
+- A frozen PostgreSQL candidate returned exactly identical public JSON and sampled thumbnail bytes for ruoxue (11 photos) and bluesecret (24). Private editor/draft/media APIs returned 401; writes returned 503; the production bootstrap did not install UI mocks.
+- An unassigned protected candidate then passed fresh real OTP/session, Create, Save Draft, three actual signed R2 uploads, private Preview, Publish, Studio listing, test-album soft deletion and logout. Only public sample photographs were used. The test objects remain private; no R2 media was deleted and no legacy album was edited.
+- 75 automated tests and all eight desktop/mobile browser groups passed; CI passed. Temporary migration password and identity variables were removed after verification.
+- At the user's direction, further development configuration was canceled. The empty development project is paused and the Production Supabase project is active. No development SMTP/R2 credentials were copied, and hosted development adversarial tests are not claimed. QQ/163/Outlook delivery, mainland-China connectivity and physical iPhone Safari remain unverified.
 
-The automatic production-deployment authorization remains valid once those gates pass. Until then, a draft PR can be reviewed without exposing a partially configured multi-user platform. Exact setup, SMTP example, migration commands, rollback/forward-repair procedure, and cost controls are in `phase-4-release.md`.
+The reviewed candidate and migration evidence support the release. PR #3 records the final domain-assignment outcome. Private backup details and verification receipts remain under ignored `.data/phase4-release/`; the backup itself is retained in private Production R2. After accepting PostgreSQL writes, repair forward and preserve PostgreSQL as authority; do not replay the initial R2 import over new records.
 
 ## Resend / Supabase SMTP completion
 
