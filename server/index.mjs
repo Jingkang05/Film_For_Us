@@ -23,7 +23,7 @@ const shareId = "[^/]+";
 const publishedRoute = new RegExp(`^/api/a/(${shareId})(?:/media/(${photoId})/(thumb|full))?$`);
 const draftMedia = new RegExp(`^/api/draft-media/(${photoId})/(thumb|full)$`);
 const pageRoute = new RegExp(`^/(?:login/?|create/?|dashboard/?|demo/?|manage(?:/preview)?/?|editor(?:/[^/]+)?/?|preview/[^/]+/?|a/${shareId}/?)?$`);
-const staticRoute = /^\/(?:(?:darkroom|envelope|manage|platform|polaroid|typography)\.css|ui\/(?:[a-z-]+\.js|heic-decoder-license\.txt)|assets\/[a-z0-9.-]+\.(?:svg|webp|woff2)|samples\/[a-z0-9-]+\.webp)$/;
+const staticRoute = /^\/(?:(?:darkroom|envelope|manage|platform|polaroid|typography)\.css|ui-preview\.js|ui\/(?:[a-z-]+\.js|heic-decoder-license\.txt)|assets\/[a-z0-9.-]+\.(?:svg|webp|woff2)|samples\/[a-z0-9-]+\.webp)$/;
 const soundtrack = "/assets/who-knows.m4a";
 
 async function body(req, limit, tooLarge = "The file exceeds the size limit.") {
