@@ -646,12 +646,12 @@ export function mountDarkroom(album: MemoryProject, preview: boolean, officialDe
     app.innerHTML = `<section class="darkroom darkroom--${scene}${viewer ? " darkroom--viewer" : ""}">
       <header class="scene-bar"><span>SCENE ${count(step)} <span class="scene-divider">—</span> ${sceneLabel}</span>
         <span>${preview ? "DRAFT · " : album.demo ? "DEMO · " : ""}${status}</span></header>
-      <div class="stage">${stage}${scene === "envelope" && officialDemo && !preview ? `<div class="demo-opening-invitation"><a class="text-button" href="/login?next=/create" data-create-memory>${ui("createOwnMemory")}</a></div>` : ""}</div>
-      ${scene === "line" && !preview ? `<aside class="memory-invitation"><p>${ui("createInvitation")}</p><a href="/login?next=/create" data-create-memory>${ui("createOwnMemory")}</a></aside>` : ""}
+      <div class="stage">${stage}${scene === "envelope" ? `<div class="envelope-guidance${officialDemo && !preview ? " demo-opening-invitation" : ""}"><p class="stage-hint">${hint}</p>${officialDemo && !preview ? `<a class="text-button memory-create-cta" href="/login?next=/create" data-create-memory>${ui("createOwnMemory")}</a>` : ""}</div>` : ""}</div>
+      ${scene === "line" && !preview ? `<aside class="memory-invitation"><p>${ui("createInvitation")}</p><a class="text-button memory-create-cta" href="/login?next=/create" data-create-memory>${ui("createOwnMemory")}</a></aside>` : ""}
       <footer class="scene-foot">
         ${scene === "tray" && development === "ready"
           ? `<div class="hang-prompt"><p class="stage-hint">${hint}</p><button class="action" type="button" data-action="hang">${ui("hangPrint")}</button></div>`
-          : hint ? `<p class="stage-hint">${hint}</p>` : ""}
+          : hint && scene !== "envelope" ? `<p class="stage-hint">${hint}</p>` : ""}
         <div class="scene-actions">
           ${step === 1 ? "" : scene === "film" || (scene === "tray" && !state.queue.length)
             ? `<button class="text-button" type="button" data-action="table">${icon("left")} ${ui("backTable")}</button>`
