@@ -1,102 +1,78 @@
-# Film for us
+# Film For Us
 
-A mobile-first film album with lightweight Chinese / English UI prompts. The demo opens with a letter and leads to a table with two 35 mm rolls and an instant camera.
+A personal film album that opens with a letter. Arrange your photographs, tell the stories behind them, and share an interactive darkroom experience with someone important to you.
 
-## Run locally
+**[Open the live app](https://filmforus.space/)** · **[Try the demo](https://filmforus.space/demo)** · **[Create your own album](https://filmforus.space/create)** · **[My Studio](https://filmforus.space/dashboard)**
 
-Use Node.js 24 and pnpm.
+无需在本地运行：直接[体验线上 Demo](https://filmforus.space/demo)，或[登录并创建自己的相册](https://filmforus.space/create)。
+
+## Use it online
+
+1. Explore the [official demo](https://filmforus.space/demo): open the wax-sealed envelope, browse the film rolls, and develop and hang your favorite photographs.
+2. Choose [Create a Memory](https://filmforus.space/create) and sign in with the eight-digit code sent to your email. No account password is required.
+3. Write your opening letter, name the three rolls, and upload your photos. JPEG, PNG, WebP and HEIC/HEIF are supported; HEIC/HEIF uploads are converted to JPEG.
+4. Select a photo in the contact sheet to edit its date, story and roll, change its order, or replace it. Dates and captions are optional.
+5. **Save draft** to keep your work. **Preview draft** saves first and opens the real Viewer without publishing. To publish, add a title and letter, name all three rolls, and upload at least one photo to each roll.
+6. **Publish**, then copy the generated share link. Return to [My Studio](https://filmforus.space/dashboard) to edit your albums, publish updates, unpublish or delete them.
+
+Drafts and editing are account-protected. A published share link lets anyone who has it view the published album. Saving later draft changes does not update the public version until you publish again. Previously published addresses continue to work when you change the sharing suffix.
+
+The homepage opens the official demo; personal albums have their own `/a/…` links.
+
+## The experience
+
+- A photographic wax seal, a folded paper envelope and a personal opening letter.
+- Two 35 mm film rolls, a darkroom developing tray and a drying line for selected prints.
+- An instant camera that ejects photographs one at a time.
+- A responsive album editor with contact sheets, a selected-photo panel, upload feedback and Save / Preview / Publish controls.
+- Chinese and English interface prompts, keyboard controls and reduced-motion support.
+
+The **中 / EN** control changes interface text and remembers the choice in that browser. The brand and your own titles, letters, roll names and captions stay as authored. Browser-level automatic translation is separate and may translate those words too.
+
+![Album editor with a contact sheet and selected-photo panel](previews/album-editor/desktop.png)
+
+[Mobile screenshot](previews/album-editor/mobile.png) · [Editor implementation and verification](docs/album-editor-ui.md)
+
+## Run locally — contributors
+
+The online links above work without installation. For development, use **Node.js 24** and **pnpm**:
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm dev
+pnpm build
+node scripts/preview-phase4.mjs
 ```
 
-Open [the demo](http://127.0.0.1:4173/demo). To start your own album, choose **Upload photos**. On the first visit to the [local album editor](http://127.0.0.1:4173/manage#upload), set an owner password of at least 12 characters. For a hosted instance, configure `OWNER_PASSWORD` on the server before signing in.
+Open `http://127.0.0.1:4184/`. This disposable local environment uses embedded PostgreSQL, synthetic authentication and in-memory media storage. It does not need hosted credentials or send email. Sign in with a test address ending in `@example.test` and the local-only code `12345678`; then use Create or My Studio. Stop with **Ctrl+C**. Test albums and sessions are discarded when the process ends.
 
-The owner album starts with an empty draft. Write the opening letter in any language, choose a roll, and select or drop JPEG, PNG, or WebP files into the upload area. Review the list and select **Upload**. Add a date to each photo before you publish. Notes are optional. Later publications reuse the same share link.
-
-The local server binds to loopback by default. `ROLL_DATA_DIR` sets the location of the SQLite database, which contains the draft, original uploads, display images, and the current published snapshot. It defaults to `.data`. The share link grants access to anyone who holds it.
-
-## Bilingual UI prompts
-
-The upper-right **中 / EN** buttons switch interaction prompts, controls, tooltips, loading/error feedback, and editor UI. First visits use Chinese; `localStorage["roll-for-us:ui-language"]` remembers the choice. If storage is unavailable, switching still works for the visit.
-
-- `src/ui-translations.ts` contains the typed, matching dictionaries and known application error messages. No translation service, language routes, or i18n dependency is used.
-- `src/ui-language.ts` updates only explicit `data-ui` text leaves and marked attributes. It never calls scene renderers, updates input values, or replaces scene, photo, or audio nodes. The same switcher moves into open native dialogs to remain keyboard-accessible.
-- Decorative English scene/archive labels, the brand, and the decorative instant-camera footer stay English. User letters, titles, roll names, notes, dates, and images are left exactly as authored.
-- Chinese UI reuses **寄给冬天的情诗** and the existing Unicode-preserving punctuation font calibration described in [TYPOGRAPHY.md](TYPOGRAPHY.md). English artistic prompts use the existing Reenie Beanie handwriting; decorative type stays unchanged.
-
-Browser verification and screenshots are recorded in [previews/bilingual-ui/README.md](previews/bilingual-ui/README.md).
-
-## Wax-sealed envelope
-
-Press the burgundy floral wax seal, or focus it and press Enter / Space. The paper and dried sprig do not open the envelope. A 2.8-second sequence releases the seal and its botanical specimen together, turns the two-sided cotton-paper flap around its top crease, draws the original letter out from behind the pocket, and carries it into the existing reading layout. The seal and stems remain attached to the flap as it turns; their cast shadows stay on the paper. Music uses the existing control; no additional sound effects are added. “For you” is removed from the envelope.
-
-- `src/envelope-config.ts`: set `motif` to `"rose"` (default) or `"branch"` to select one of the two photographic wax reliefs. Also contains asset paths, stage durations, and easing. Interaction copy lives in `src/ui-translations.ts`.
-- `src/envelope.ts`: layered paper construction, independent photographic wax and botanical images, and two silhouette masks for the directional stem / flower / leaf shadows. `src/envelope-motion.ts` owns `sealed → sealReleasing → flapOpening → letterEmerging → transitioning`; the reading transition then reaches `completed`.
-- `public/envelope.css`: cotton colors (`--cotton-light`, `--cotton`, `--cotton-shade`, `--fold-shade`), wax size (`--seal-size`), responsive extraction distance (`--letter-lift`), photographic fibre texture, edge shading, botanical placement, and focus / hover treatment. The four optimized WebP assets are in `public/assets/envelope-*.webp`; their generation prompts and provenance are recorded in `previews/envelope/ASSETS.md`.
-- `src/darkroom.ts`: preserves album text and existing scenes, and matches the emerging paper's measured position to the reading scene. Repeated activation is locked; pending animations are cancelled on scene changes and page exit. Reduced motion keeps 120 ms of seal feedback and opens the letter without spatial movement.
-
-After configuration changes, run `pnpm build` and reload. Every new visit or reload starts at the sealed envelope. Reading progress stays in memory for the current visit; old saved scene progress is ignored. Browser back/forward-cache restores also start a new visit. The controller tests cover repeated activation, sequencing, page exit, cancellation, and changing reduced-motion preferences.
-
-## Instant prints
-
-Open the envelope, choose **Enter the darkroom**, then select the brown camera resting on the table. The view moves in as the camera rises to face you. Press the shutter to send the next photo up through the top slot. The previous print slides onto the table as the next one comes out. The speaker button toggles shutter sound. Select any visible print to read the full caption. **Replay the Moments** clears the table after the last print.
-
-- To use your own photos, set **Destination roll** to the third roll in the album editor. Upload the images, use the up and down buttons to arrange them, and use **Note on the back** to add any captions. Choose **Preview draft** to try the sequence locally or **Publish** to update your share link.
-- To replace the demo photos, add your WebP files to `public/samples` and edit the `home` list in `server/demo.mjs`. For example, `sample("my-photo", "The caption.")` loads `public/samples/my-photo.webp`. If you keep a sample’s existing name and it specifies a separate thumbnail, replace both files. The list order sets the print order and its length sets the counter total. Restart `pnpm dev` after editing `server/demo.mjs`.
-- Edit `instantCopy` in `src/polaroid-config.ts` to change the instructions and other scene copy. The `instantMotion` values are in milliseconds. Lower them together for a faster print sequence or raise them to slow it down. Adjust `ejection` to tune how long the print takes to feed through the slot and `development` to tune how quickly the image appears. After editing the configuration, run `pnpm build` and reload the page.
-- `src/polaroid.ts` controls the shutter, ejection, development, and stack. `public/polaroid.css` controls the composition, material treatments, and responsive breakpoints.
-
-## Deploy on Vercel
-
-Use Node.js 24 and connect a **private** Vercel Blob store to the project. Configure `APP_ORIGIN` with the production HTTPS origin, without a trailing slash. Vercel serves the compiled files in `public` and routes the API to the Node.js function in `api`.
-
-The production editor is [filmforus.space/manage](https://filmforus.space/manage), with `APP_ORIGIN=https://filmforus.space`. The editor generates share links from its current origin. When changing domains, update `APP_ORIGIN`, redeploy so the API uses the new value, and redirect the old domain to the new one while preserving paths and query strings. The project routing rules redirect `film-for-us-jk.vercel.app` to `filmforus.space`.
-
-In the album editor, **Sharing address** lets the owner edit the `/a/` suffix or choose **Use album title** to generate it from the English letters and numbers in the current title. Titles without English letters or numbers require a manually entered suffix. Suffixes accept up to 80 ASCII English letters, numbers, and internal hyphens or underscores; they are normalized to lowercase. Saving keeps the address in the draft, and publishing activates it and updates the copyable share link. Renaming the title alone does not change a published address. Clearing the suffix restores the generated ID as the main address. All previously published suffixes and the immutable album ID continue to open the latest published album, including its photos. Alias history is stored in the published snapshot in both SQLite and private Blob storage; existing albums need no data migration.
-
-For a new album, configure an `OWNER_PASSWORD` of at least 12 characters. To bring over a local SQLite album, run the migration before serving traffic, with the new store's `BLOB_READ_WRITE_TOKEN` available in your shell environment.
-
-```sh
-node scripts/migrate-to-vercel.mjs
-```
-
-You can pass a SQLite path as the first argument. The migration keeps the share ID, draft, published version, original photos, display images, and any password set through the local editor. Sign in again on the production domain. The local and hosted albums are separate after the import.
-
-## Multi-album editor (Phase 3)
-
-Open `/editor` (or the existing `/manage`) to manage independent albums. Create a draft, edit it at `/editor/:albumId`, preview it privately, then publish to its own `/a/:albumId` URL. The library includes unpublishing and exact-ID deletion confirmation. The original album and published suffixes remain valid.
-
-Production currently uses private Blob with conditional writes. The R2 migration branch adds private S3-compatible storage, separate auth/control documents, immutable snapshots, resumable copy/verification and recovery tooling; provider selection defaults to Blob until complete recovery is verified. Routine builds no longer access storage. An explicit `STORAGE_PREFLIGHT=metadata` checks metadata without an asset HEAD scan or backup writes; deep storage audits must be separately requested and budgeted. See [R2 recovery status and cutover gates](docs/r2-recovery-status.md) and [Phase 3 history](docs/multi-album-editor-phase-3.md). Do not run the import script against an existing production store.
-
-For an isolated R2 repository preview, build and run `node scripts/preview-r2.mjs`; it uses only public sample images in an in-memory object store. `pnpm audit:storage` runs synthetic Blob call-count assertions with network access disabled. Private recovery output belongs in ignored `.data/`; never commit it. Migration commands and live checks require explicit server environment configuration and do not run automatically during builds.
-
-For isolated browser QA with sample photos only, build and run `node scripts/preview-multi-album.mjs`. It uses a disposable temporary database.
+`pnpm dev` is available for an explicitly configured backend. The live service uses Supabase email-code authentication, PostgreSQL metadata and private Cloudflare R2 media; it does not use the older owner-password/Blob setup. For a connected local environment, use separate development resources and the environment template in `.env.example`. Keep credentials in ignored server environment files.
 
 ## Verify
 
 ```sh
 pnpm check
 pnpm test
+pnpm test:browser
+node scripts/check-album-editor-browser.mjs
 ```
 
-The integration test uses an isolated database and 18 sample uploads. It covers EXIF rotation, size variants, duplicate retries, stale revisions, private media access, failed publication, restart persistence, and replacement of the public snapshot. Guest and draft-preview reading progress is held only in memory. Language and shutter-sound preferences remain saved.
+The browser commands require Playwright browsers. If they are not installed:
 
-## Visual reference
+```sh
+pnpm exec playwright install chromium webkit
+```
 
-The four scene compositions come from the supplied video at 00:00 (envelope), 00:04 (overhead roll table), 00:08 (film close-up), and 02:00 (printing tray and drying line). The live objects use HTML and CSS, with hand-marked selections, paper grain, and a red safelight. The phone layout repositions the same objects around one interaction at a time.
+`pnpm test:browser` builds and runs the existing Viewer/account flow. The editor regression command reuses that build and checks photo edits, uploads and retry, replacement, sorting, save failures, private Preview, publication, and desktop/tablet/mobile layouts. Both suites use disposable local fixtures rather than production accounts or albums.
 
-The reference video does not identify its fonts. The app matches the English lettering with [Cormorant Garamond](https://fonts.google.com/specimen/Cormorant+Garamond) for titles, [Courier Prime](https://fonts.google.com/specimen/Courier+Prime) for the letter and scene numbers, and [Reenie Beanie](https://fonts.google.com/specimen/Reenie+Beanie) for handwritten prompts. Chinese text, including new user input, uses the owner-supplied **寄给冬天的情诗**. Its missing CJK characters fall back to **清松手写体 7p** under SIL OFL 1.1. The fonts are served locally; Chinese comma and period placement is optically centered without changing the stored text. See [TYPOGRAPHY.md](TYPOGRAPHY.md) for resources, licensing limitations, role tokens, glyph coverage and build instructions. The owner-supplied font's web embedding license has not been verified; the other fonts' SIL Open Font License notices are in `public/assets`.
+## Architecture and documentation
 
-The original six demo photos in `public/samples`, including `home-1.webp` and `home-2.webp`, are cropped from a contact sheet generated with the built-in ImageGen tool. The prompt follows.
+The frontend uses TypeScript and native HTML/CSS. Vercel hosts the app and Node.js API; Supabase provides authentication and PostgreSQL; photos are kept in private Cloudflare R2 storage. Owner-scoped server checks and database row-level security protect editing and drafts. Public viewing uses the published snapshot.
 
-> Create one edge-to-edge 3-column by 2-row contact sheet of six DIFFERENT candid 35mm color travel snapshots, 3:2 canvas, exactly equal-size square tiles touching at straight grid boundaries with no gutter, no margins, no text, no frames, no overlapping content. These are example photos for a personal darkroom album. Top row, left to right: a tiny figure under a light umbrella beside an old wet street and lush green shop fronts; sunlight coming through a café window onto two cups and an empty chair; a cyclist on a coastal road above a quiet blue sea. Bottom row left to right: distant person at the edge of a breaking wave on a foggy beach; a red train crossing a steel bridge seen from a riverbank at dusk; the lights of a quiet apartment building seen from across a leafy street at night. Each frame is intentionally composed with depth and its own focal point. Nostalgic casual film photography with restrained color, slight grain and warm highlights, no borders or date stamps, authentic and plausible, no identifiable faces.
+- [Viewer design, interactions and asset provenance](docs/viewer-implementation.md)
+- [Typography, font resources and licensing notes](TYPOGRAPHY.md)
+- [Album editor behavior, screenshots and test coverage](docs/album-editor-ui.md)
+- [Phase 4 configuration and release runbook](docs/phase-4-release.md)
+- [Phase 4 verification record](docs/phase-4-verification.md)
+- [Earlier multi-album editor history](docs/multi-album-editor-phase-3.md)
 
-Both views of the brown camera were generated together from the supplied references with the built-in ImageGen tool. The crops are stored as `public/assets/instax-mini-evo-front.webp` and `public/assets/instax-mini-evo-table.webp`. The prompt follows.
-
-> Make a transparent two-view product reference sheet for ONE identical brown Fujifilm instax mini Evo camera. Landscape canvas split into two equal side-by-side panels without a visible dividing line. One complete camera per panel, centered, same portrait proportions and scale, both on fully transparent alpha, isolated with no floor, no cast shadow and no background, no captions, no paper anywhere. The supplied Fujifilm frontal product photo defines front layout, orientation, and proportions: faithfully match it, including vertical brushed silver controls strip on image left, rectangular flash over round silver shutter and small mirror, large round black lens right of center, brown pebbled leatherette, small copper switch lower right and small instax mini Evo badge upper right. The supplied earlier render is a MATERIAL reference only. LEFT panel is the standing camera for the website shutter scene: perfectly straight frontal angle, yaw precisely ZERO, roll precisely ZERO, sides parallel, no left or right side visible whatsoever. The lens is round and aimed squarely at the viewer. Camera is viewed just a few degrees above eye level, only enough to show a slim upper strip of brushed silver and a single readable dark horizontal recessed film ejection slot centered over the body and roughly 60% of the body width. The slot is absolutely horizontal, from left to right. RIGHT panel is the EXACT SAME CAMERA lying flat on its back on an invisible tabletop, its front face and lens looking up at the ceiling. The viewer is directly overhead, with a slight tilt of about ten degrees toward the lower end of the camera body, so the thin lower silver edge and depth are visible, and the top film slot is hidden at this angle. Keep the right panel body upright within its own image coordinates, without rotation or slant in the image plane. Both views have the SAME recognizable front face, matching proportions, matched brown leather, matched warm subdued tungsten lighting, the same small product marks, and no side yaw in either shot. Product photography realism. Put clear transparent margins around each isolated object. No other props, no sample Polaroid, no watermark.
-
-The six additional instant prints in `public/samples/home-3.webp` through `home-8.webp` come from a second built-in ImageGen contact sheet. Its prompt follows.
-
-> One edge-to-edge 3-column by 2-row photographic contact sheet for an interactive film album called After Dark. Exactly equal-size square tiles, 3:2 canvas, straight grid boundaries, no gutters, borders, captions or watermarks. Six different authentic 35mm color film snapshots united by the course of a single evening, restrained warm amber highlights and deep natural shadows, subtle grain, analog halation, editorial and candid, strong readable focal point centered in each tile for a portrait crop. Top row left to right: a small amber-lit diner window seen across a blue-hour wet street with the reflection in the foreground, a hand holding a cup beside a fogged train window with blurred night lights outside, two distant silhouettes crossing a rain-damp street under one streetlamp. Bottom row left to right: a table for two with low candlelight and a white tablecloth after dinner, a quiet flight of old residential stairs with a shaft of tungsten light, an open window framed by gauze curtains looking out on distant pinpoints of city lights. Photorealistic travel and personal documentary photography, no recognizable faces, no lettering, no collage inside any tile.
+The release runbook includes historical migration procedures; ordinary builds do not perform migrations. Configure separate development/preview services before testing a hosted backend. The branch-specific UI Preview is an isolated demonstration with uploads disabled and changes reset on navigation; use the local fixtures for persistence tests.
