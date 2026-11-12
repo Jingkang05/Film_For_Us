@@ -31,6 +31,7 @@ async function start() {
     mountDarkroom(album, source === "/api/preview" || source.endsWith("/preview"));
     const { mountViewerMenu } = await import("./platform.js");
     mountViewerMenu();
+    if (new URLSearchParams(location.search).has("sidebar")) document.querySelector<HTMLButtonElement>(".viewer-menu-toggle")?.click();
   } catch (error) {
     if (error instanceof RequestError && error.status === 401) {
       if (!(await api<{ enabled: boolean }>("/api/platform")).enabled) {

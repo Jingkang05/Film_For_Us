@@ -23,3 +23,8 @@ jobs:
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium --only-shell
       - run: node scripts/check-phase4-browser.mjs
+      - run: node scripts/build-ui-preview.mjs
+        env:
+          VERCEL_ENV: preview
+          VERCEL_GIT_COMMIT_REF: codex/phase-4-supabase-multi-user
+      - run: node scripts/check-ui-preview.mjs
