@@ -40,6 +40,9 @@ test("presigned R2 uploads are short lived, create-only and require signed heade
   assert.ok(url.searchParams.get("X-Amz-SignedHeaders").includes("if-none-match"));
   assert.equal(target.headers["If-None-Match"], "*");
   await assert.rejects(store.signUpload("key", { expiresIn: 301 }));
+  const bounded = new URL((await store.signUpload("source/bounded", { contentLength: 1234 })).url);
+  assert.ok(bounded.searchParams.get("X-Amz-SignedHeaders").split(";").includes("content-length"));
+  await assert.rejects(store.signUpload("source/oversize", { contentLength: 20 * 1024 ** 2 + 1 }));
 });
 test("configuration rejects missing/insecure endpoints and production preview reuse", () => {
   assert.throws(() => r2Config({}), /Missing/);

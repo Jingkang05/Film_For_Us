@@ -7,23 +7,29 @@
     "node": "24.x"
   },
   "scripts": {
-    "build": "tsc && node scripts/build-heic-decoder.mjs && node scripts/verify-production-storage.mjs",
-    "check": "tsc --noEmit && node --check server/index.mjs && node --check server/album.mjs && node --check server/blob-album.mjs && node --check 'api/[...route].mjs' && node --check server/collection.mjs && node --check scripts/verify-production-storage.mjs && node --check scripts/migrate-to-vercel.mjs && node --check scripts/verify-public-album.mjs && node --check scripts/preview-multi-album.mjs && node --check server/r2-storage.mjs && node --check server/r2-album.mjs && node --check server/storage.mjs && node --check scripts/storage-migration.mjs && node --check scripts/recover-local-album.mjs",
+    "build": "node scripts/release-job.mjs && tsc && node scripts/build-ui-preview.mjs && node scripts/build-heic-decoder.mjs && node scripts/verify-production-storage.mjs",
+    "check": "tsc --noEmit && node --check server/index.mjs && node --check server/album.mjs && node --check server/blob-album.mjs && node --check 'api/[...route].mjs' && node --check server/collection.mjs && node --check scripts/verify-production-storage.mjs && node --check scripts/migrate-to-vercel.mjs && node --check scripts/verify-public-album.mjs && node --check scripts/preview-multi-album.mjs && node --check server/r2-storage.mjs && node --check server/r2-album.mjs && node --check server/storage.mjs && node --check scripts/storage-migration.mjs && node --check scripts/recover-local-album.mjs && node --check server/platform-config.mjs && node --check server/database.mjs && node --check server/platform-auth.mjs && node --check server/postgres-album.mjs && node --check scripts/migrate-to-postgres.mjs",
     "dev": "tsc && node --env-file-if-exists=.env server/index.mjs",
     "start": "node --env-file-if-exists=.env server/index.mjs",
     "test": "node scripts/build-heic-decoder.mjs && node --test",
     "preview:templates": "tsc && node scripts/preview-memory-projects.mjs",
     "preview:albums": "tsc && node scripts/preview-multi-album.mjs",
-    "audit:storage": "node scripts/audit-blob-operations-offline.mjs"
+    "audit:storage": "node scripts/audit-blob-operations-offline.mjs",
+    "test:platform": "node --test test/platform-auth.test.mjs test/postgres-platform.test.mjs",
+    "test:browser": "pnpm build && node scripts/check-phase4-browser.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1165.0",
     "@aws-sdk/s3-request-presigner": "3.1165.0",
+    "@supabase/supabase-js": "2.119.0",
     "@vercel/blob": "2.8.2",
     "heic-to": "1.6.7",
+    "pg": "8.23.1",
     "sharp": "0.35.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.16",
+    "playwright": "1.62.1",
     "typescript": "5.9.3"
   }
 }

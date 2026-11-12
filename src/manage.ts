@@ -20,16 +20,22 @@ type Upload = {
 const photoCount = (total: number) => ui(total === 1 ? "onePhoto" : "photoCount", { count: total });
 
 export async function mountManage(albumId?: string) {
+  const platform = await api<{ enabled: boolean }>("/api/platform");
+  if (platform.enabled || location.pathname === "/dashboard") {
+    const { requireAccount } = await import("./platform.js");
+    if (!await requireAccount()) return;
+  }
   const css = document.createElement("link");
   css.rel = "stylesheet";
   css.href = "/manage.css";
   document.head.append(css);
   document.title = "Album editor · Film for us";
   try {
-    if (albumId) editor(await api<ManageData>(`/api/editor/${albumId}`));
-    else await mountAlbumLibrary();
+    if (albumId) editor(await api<ManageData>(`/api/editor/${albumId}`), platform.enabled);
+    else await mountAlbumLibrary(platform.enabled);
   } catch (error) {
-    if (error instanceof RequestError && error.status === 401) login(error.code === "setup-required");
+    if (error instanceof RequestError && error.status === 401 && platform.enabled) location.replace(`/login?next=${encodeURIComponent(location.pathname)}`);
+    else if (error instanceof RequestError && error.status === 401) login(error.code === "setup-required");
     else showMessage("editorFailed", "tryLater", () => location.reload());
   }
 }
@@ -59,7 +65,7 @@ function login(setup: boolean) {
   });
 }
 
-function editor(initial: ManageData) {
+function editor(initial: ManageData, platform = true) {
   let data = initial;
   const endpoint = `/api/editor/${encodeURIComponent(data.shareId)}`;
   // Validate at the same boundary used by the Viewer, and populate all template-supported fields.
@@ -139,7 +145,7 @@ function editor(initial: ManageData) {
     app.innerHTML = `<section class="owner">
       <header class="owner-heading"><div><a href="/demo" class="owner-brand">Film <i>for us</i></a><h1>${ui("albumEditor")}</h1></div>
         <button class="text-button" data-action="logout" type="button">${ui("signOut")}</button></header>
-      <a href="/editor" class="text-button">${icon("left")} ${ui("allAlbums")}</a>
+      <a href="${platform ? "/dashboard" : "/editor"}" class="text-button">${icon("left")} ${ui("backStudio")}</a>
       <div class="owner-toolbar">
         <p id="revision-status">${dirty ? ui("unsaved") : ui("draftVersion", { version: data.revision })} · ${published ? ui("publishedVersion", { version: data.publishedRevision! }) : ui("unpublished")}</p>
         <div><a class="text-button" href="#upload">${ui("uploadPhotos")}</a>
@@ -147,7 +153,7 @@ function editor(initial: ManageData) {
           <button type="button" class="action" data-action="save">${ui("saveDraft")}</button>
           <button type="button" class="action action--publish" data-action="publish">${ui("publish")}</button></div>
         <p id="owner-status" class="owner-feedback ${messageError ? "owner-feedback--error" : ""}" >${feedback}</p>
-        ${published ? `<div class="share-field"><label>${ui("shareLink")}<input readonly value="${esc(share)}"></label><button type="button" class="action" data-action="copy">${ui("copyLink")}</button></div>` : ""}
+        ${published ? `<div class="share-field"><label>${ui("shareLink")}<input readonly value="${esc(share)}"></label><button type="button" class="action" data-action="copy">${ui("copyLink")}</button><a class="text-button" href="${esc(share)}">${ui("viewPublished")}</a></div>` : ""}
       </div>
       <section class="owner-section"><h2>${ui("openingLetter")}</h2>
         <label>${ui("albumTitle")}<input name="title" value="${esc(data.album.title)}" maxlength="80"></label>
@@ -277,6 +283,7 @@ function editor(initial: ManageData) {
         item.status = "";
         render();
         if (data.directUpload) {
+          query.set("size", String(prepared.size));
           const { url, headers } = await api<{ url?: string; headers?: Record<string, string> }>(`${endpoint}/upload-target?${query}`, { method: "POST" });
           if (url) {
             const result = await fetch(url, {
