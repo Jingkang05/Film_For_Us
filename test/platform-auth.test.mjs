@@ -37,14 +37,15 @@ test("OTP registration/login, invalid/expired/replayed codes, encrypted persiste
   await assert.rejects(handle("/api/auth/otp",{email},{...req,headers:{origin:"https://attacker.invalid"}}),{status:403});
   await handle("/api/auth/otp",{email});
   await assert.rejects(handle("/api/auth/otp",{email}),{status:429});
-  await assert.rejects(handle("/api/auth/verify",{email,code:"999999"}),{status:401});
+  await assert.rejects(handle("/api/auth/verify",{email,code:"123456"}),{status:422});
+  await assert.rejects(handle("/api/auth/verify",{email,code:"99999999"}),{status:401});
   provider.pending.get(email).expires=0;
-  await assert.rejects(handle("/api/auth/verify",{email,code:"123456"}),{status:401});
+  await assert.rejects(handle("/api/auth/verify",{email,code:"12345678"}),{status:401});
   provider.pending.get(email).expires=Date.now()+600000;
-  await handle("/api/auth/verify",{email,code:"123456"});
+  await handle("/api/auth/verify",{email,code:"12345678"});
   assert.match(cookie,/^__Host-ffu_session=[a-f0-9]{64}; Path=\/; HttpOnly; SameSite=Lax; Max-Age=1209600; Secure$/);
   assert.ok(!cookie.includes("access_token"));
-  await assert.rejects(handle("/api/auth/verify",{email,code:"123456"}),{status:401});
+  await assert.rejects(handle("/api/auth/verify",{email,code:"12345678"}),{status:401});
   const authenticated={...req,headers:{...req.headers,cookie:cookie.split(";")[0]}};
   const user=await auth.requireUser(authenticated);
   assert.equal(user.email,email);
@@ -69,7 +70,7 @@ test("OTP registration/login, invalid/expired/replayed codes, encrypted persiste
   await assert.rejects(auth.requireUser(authenticated),{status:401});
   assert.ok(provider.revoked.has(user.sessionId));
   await db.pg.query("delete from ffu.rate_limits");
-  await handle("/api/auth/otp",{email});await handle("/api/auth/verify",{email,code:"123456"});
+  await handle("/api/auth/otp",{email});await handle("/api/auth/verify",{email,code:"12345678"});
   const newReq={...req,headers:{...req.headers,cookie:cookie.split(";")[0]}};
   const nextUser=await auth.requireUser(newReq);assert.equal(nextUser.userId,user.userId,"existing-user login");
   await db.pg.query("delete from auth.sessions where id=$1",[nextUser.sessionId]);

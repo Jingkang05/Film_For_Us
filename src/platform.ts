@@ -31,7 +31,7 @@ export async function mountLogin() {
   app.innerHTML = `<section class="owner-login platform-login"><a class="owner-brand" href="/">Film <i>for us</i></a>
     <h1>${ui("accountLogin")}</h1><p>${ui("loginIntro")}</p>
     <form><label>${ui("emailAddress")}<input type="email" name="email" autocomplete="email" maxlength="254" required></label>
-      <div data-code hidden><label>${ui("verificationCode")}<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6"></label></div>
+      <div data-code hidden><label>${ui("verificationCode")}<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" maxlength="8"></label></div>
       <button class="action" type="submit">${ui("sendCode")}</button>
       <button class="text-button" type="button" data-resend hidden>${ui("resendCode")}</button>
       <button class="text-button" type="button" data-change-email hidden>${ui("changeEmail")}</button>

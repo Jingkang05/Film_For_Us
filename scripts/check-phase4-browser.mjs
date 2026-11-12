@@ -31,9 +31,9 @@ try {
     await page.locator('[data-change-email]').waitFor({state:"visible"});await page.locator('[data-change-email]').click();
     assert.equal(await page.locator('[name="email"]').getAttribute("readonly"),null);
     await page.locator('[name="email"]').fill("browser-creator@example.test");await page.locator('button[type="submit"]').click();
-    await page.locator('[name="code"]').waitFor({state:"visible"});await shot("desktop-otp");await page.locator('[name="code"]').fill("999999");
+    await page.locator('[name="code"]').waitFor({state:"visible"});await shot("desktop-otp");await page.locator('[name="code"]').fill("99999999");
     await page.locator('button[type="submit"]').click();await page.locator(".owner-feedback--error").waitFor();await shot("desktop-otp-error");
-    await page.locator('[name="code"]').fill("123456");
+    await page.locator('[name="code"]').fill("12345678");
     await page.locator('button[type="submit"]').click();await page.waitForURL("**/create");
     await page.locator(".template-choice").waitFor();await shot("desktop-create");
     const albums=await page.request.get(`${origin}/api/editor`);assert.deepEqual((await albums.json()).albums,[]);
@@ -92,7 +92,7 @@ try {
       }
     }
     await page.locator('[name="email"]').fill("mobile-creator@example.test");await page.locator('button[type="submit"]').click();await page.locator('[name="code"]').waitFor({state:"visible"});
-    await page.locator('[name="code"]').fill("123456");await page.locator('button[type="submit"]').click();await page.waitForURL("**/dashboard");
+    await page.locator('[name="code"]').fill("12345678");await page.locator('button[type="submit"]').click();await page.waitForURL("**/dashboard");
     await page.locator(".studio-empty").waitFor();await shot("mobile-studio-empty");
     await page.locator('.studio-empty a').click();await page.waitForURL("**/create");await page.locator(".template-choice").waitFor();await shot("mobile-create");
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

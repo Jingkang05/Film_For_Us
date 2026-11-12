@@ -2,15 +2,15 @@
 
 ## Current release status
 
-Implementation is on `codex/phase-4-supabase-multi-user`. Film For Us Supabase project: `lppysxtcvuphvynrvtyr`, Mumbai (`ap-south-1`). User reports custom SMTP is not configured. No verified administrator email/UUID has been supplied. Live R2 metadata has not been imported. Production remains on its functioning legacy R2 implementation. Never declare release gates passed from local synthetic tests alone.
+Implementation is on `codex/phase-4-supabase-multi-user`. Film For Us Supabase project: `lppysxtcvuphvynrvtyr`, Mumbai (`ap-south-1`). Resend custom SMTP is configured and a real eight-digit Supabase OTP email was delivered to the user-approved Gmail mailbox. The intended administrator email has been explicitly supplied privately; verified application-session ownership association remains pending. Live R2 metadata has not been imported. Production remains on its functioning legacy R2 implementation. Never declare release gates passed from local synthetic tests alone.
 
 ## Configure Supabase
 
 1. Open the **Film For Us** project. Do not reuse Nested KL or 圆周旅迹. For Preview/Development, create a separate free project if your organization has capacity; otherwise use the local fixture for development until an isolated project exists. Do not activate a paid project or branch without approval.
 2. Apply the versioned migration in `supabase/migrations/20261112005816_phase4_multi_user.sql`. The `ffu` schema must **not** be included in **Integrations → Data API → Exposed schemas**. No Supabase Storage bucket is needed. Check Database Advisors after applying it.
-3. Under **Authentication → Sign In / Providers → Email**, enable email sign-in, confirmations and new users; set **OTP length to 6** and **Email OTP expiration to 600 seconds**. Keep anonymous sign-in disabled. Disable password-based sign-in if the current dashboard offers that setting; the app provides OTP only.
+3. Under **Authentication → Sign In / Providers → Email**, enable email sign-in, confirmations and new users; keep **OTP length at 8** and **Email OTP expiration to 600 seconds**. Keep anonymous sign-in disabled. Disable password-based sign-in if the current dashboard offers that setting; the app provides OTP only.
 4. In **Authentication → Email → Templates**, put the contents of `supabase/templates/email-otp.html` in both **Magic Link / OTP** and **Confirm signup** templates. The template uses `{{ .Token }}` rather than a confirmation URL. Subject: `Your Film For Us verification code`. Test a brand-new email and an existing user; both must receive a numeric code, not a required magic-link click.
-5. In **Authentication → URL Configuration**, set Site URL to `https://filmforus.space`. Numeric OTP is verified on the backend; no wildcard redirect is required.
+5. In **Authentication → URL Configuration**, set Site URL to `https://filmforus.space`. Eight-digit numeric OTP is verified on the backend; no wildcard redirect is required.
 6. Configure OTP send cooldown at least 60 seconds, verification rate limits, and email send limits appropriate to the SMTP provider. The app additionally enforces shared PostgreSQL limits: 30 auth attempts/IP/15 minutes, 6 sends/email/hour, one send/email/minute and 8 verify attempts/email/15 minutes. Supabase must still enforce its own limits because its Auth endpoint exists independently of the app.
 7. Keep token refresh reuse detection enabled. Use the normal one-hour JWT lifetime. The application cookie has a maximum 14-day life and every protected request checks the corresponding `auth.sessions` record plus the verified Auth user. No paid Supabase session-duration feature is required.
 

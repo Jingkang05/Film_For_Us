@@ -29,7 +29,7 @@ The initial sandboxed regression run could not bind loopback (`listen EPERM`); r
 
 Embedded PostgreSQL tests use two independent user UUIDs and the real PostgreSQL role/RLS engine. They verify private draft isolation, cross-owner read/save/upload/delete/media denials, direct SQL owner-change denial, photo-policy isolation, permanent aliases, sanitized public reads, stale/concurrent edit rejection, legacy preview-media routes, live unpublish checks before cached 304, and tombstone deletion without R2 deletion. They are not a substitute for two hosted OTP users in an isolated Supabase project.
 
-Auth tests use the production auth/session module with a test-only provider double. They cover new/existing account flows, invalid/expired/replayed OTP rejection, cooldown, origin/CSRF rejection, AES-GCM integrity, HttpOnly/Secure/SameSite cookie properties, backend-restart persistence, serialized refresh, logout, upstream revocation, environment isolation and idempotent identity-verified import. No test-provider route exists in the production handler. Real SMTP delivery and hosted OTP expiry/replay remain unverified.
+Auth tests use the production auth/session module with a test-only provider double. They cover new/existing account flows, invalid/expired/replayed OTP rejection, cooldown, origin/CSRF rejection, AES-GCM integrity, HttpOnly/Secure/SameSite cookie properties, backend-restart persistence, serialized refresh, logout, upstream revocation, environment isolation and idempotent identity-verified import. No test-provider route exists in the production handler. Real SMTP and hosted numeric-OTP delivery were verified in the Resend follow-up below; hosted OTP expiry/replay remain unverified.
 
 Browser script: `scripts/check-phase4-browser.mjs`. It starts/disposes its own isolated preview; no production credentials are used. Reproduce with `pnpm exec playwright install chromium --only-shell` followed by `pnpm test:browser`. Desktop viewport 1440×1000; mobile 390×844; reduced motion for deterministic scene checks. Screenshots and `browser-results.json` are under ignored `.data/phase4-qa/`. Checked:
 
@@ -55,7 +55,7 @@ No production media scan or additional Blob request was made. Original pending-r
 
 ## Remaining release gates
 
-- Custom SMTP/domain verification and actual QQ/163/Outlook/Gmail delivery.
+- Resend domain/custom SMTP and Gmail OTP delivery are verified. Actual QQ/163/Outlook delivery remains pending.
 - Production server credentials, encryption key and isolated Preview configuration.
 - Explicit administrator email and verified UUID, active OTP application session and legacy administrator proof.
 - Fresh private R2 backup under a verified live write freeze; import, byte/content/path/alias validation and staged cutover.
@@ -64,3 +64,7 @@ No production media scan or additional Blob request was made. Original pending-r
 - Required CI checks and final staged deployment/log checks before merge or production promotion.
 
 The automatic production-deployment authorization remains valid once those gates pass. Until then, a draft PR can be reviewed without exposing a partially configured multi-user platform. Exact setup, SMTP example, migration commands, rollback/forward-repair procedure, and cost controls are in `phase-4-release.md`.
+
+## Resend / Supabase SMTP completion
+
+After the user approved the five additive Vercel DNS records, `auth.filmforus.space` verified in Resend. A domain-restricted sending-only SMTP key is stored in macOS Keychain. A real TLS SMTP test was delivered and two idempotent submissions produced one email. The user saved Supabase SMTP credentials. Both signup and login email templates now use `{{ .Token }}`, the hosted eight-digit OTP default was retained, and the expiry is 600 seconds. The application form, backend validation, bilingual copy and test fixtures were aligned to eight digits. A real Supabase-generated email was confirmed delivered with an eight-digit numeric code, no magic link and no unfilled variables; no code or credential was logged. The code was left unused, so sign-in verification, an active application session and administrator ownership transfer remain separate gates.

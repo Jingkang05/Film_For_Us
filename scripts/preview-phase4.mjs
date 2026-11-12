@@ -51,6 +51,6 @@ export async function startPreview(port = 4184) {
   return {origin,db,data,objects,provider,server,close:async()=>{await new Promise(r=>server.close(r));await db.close();}};
 }
 if(process.argv[1] && import.meta.url===pathToFileURL(resolve(process.argv[1])).href) {
-  const preview=await startPreview(); console.log(`Disposable Phase 4 QA: ${preview.origin} — synthetic OTP 123456; existing@example.test owns a sample publication.`);
+  const preview=await startPreview(); console.log(`Disposable Phase 4 QA: ${preview.origin} — synthetic OTP 12345678; existing@example.test owns a sample publication.`);
   process.once("SIGINT",async()=>{await preview.close();process.exit(0);});
 }

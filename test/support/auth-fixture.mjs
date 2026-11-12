@@ -14,7 +14,7 @@ export function authFixture(db) {
     get refreshes() { return refreshes; },
     expireAccess() { for(const value of tokens.values()) value.token.expires_at=0; },
     clientFactory: () => ({auth:{
-      async signInWithOtp({email}) { pending.set(email,{code:"123456",expires:Date.now()+600000});return {error:null}; },
+      async signInWithOtp({email}) { pending.set(email,{code:"12345678",expires:Date.now()+600000});return {error:null}; },
       async verifyOtp({email,token}) {
         const otp=pending.get(email);
         if(!otp || otp.code!==token || otp.expires<Date.now()) return {data:{},error:{status:403}};

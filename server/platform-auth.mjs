@@ -106,7 +106,7 @@ export function createPlatformAuth({ db, config, origin, clientFactory }) {
       return { ok: true, cooldown: 60 };
     }
     await rateLimit("verify-email", email, 8, 900);
-    if (!/^\d{6}$/.test(value?.code ?? "")) throw new Problem(422, "Enter the six-digit verification code.");
+    if (!/^\d{8}$/.test(value?.code ?? "")) throw new Problem(422, "Enter the eight-digit verification code.");
     const { data, error } = await sdk.auth.verifyOtp({ email, token: value.code, type: "email" });
     if (error || !data.session) throw new Problem(401, "The code is invalid or expired. Request a new code and try again.");
     const user = await verifyUser(sdk, data.session), token = randomBytes(32).toString("hex");
