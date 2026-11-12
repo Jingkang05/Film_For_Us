@@ -23,7 +23,7 @@ try {
   page.on('pageerror',e=>errors.push(e.message));
   page.on('request',r=>{if(r.url().includes('/api/')||!r.url().startsWith(origin))forbidden.push(r.url());});
   await mkdir('.data/ui-preview-qa',{recursive:true});
-  const cases=[['login','/login','form'],['create','/create','.template-choice'],['studio','/dashboard','.album-row'],['editor','/editor/DEMO000000000001','[data-action="save"]'],['sidebar','/a/ui-sample?sidebar=1','.viewer-menu[open]']];
+  const cases=[['demo','/demo','.demo-opening-invitation a'],['login','/login','form'],['create','/create','.template-choice'],['studio','/dashboard','.album-row'],['editor','/editor/DEMO000000000001','[data-action="save"]'],['sidebar','/a/ui-sample?sidebar=1','.viewer-menu[open]']];
   for(const [name,path,selector] of cases) {
     await page.goto(origin+path);await page.locator(selector).waitFor();
     await page.screenshot({path:`.data/ui-preview-qa/${name}.png`});

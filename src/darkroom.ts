@@ -30,7 +30,7 @@ const photoAspect = (image: HTMLImageElement) => image.naturalWidth / image.natu
 const heartBadge = (selected: boolean) =>
   `<span class="frame-heart" aria-hidden="true"${selected ? "" : " hidden"}>${icon("heart")}</span>`;
 
-export function mountDarkroom(album: MemoryProject, preview: boolean) {
+export function mountDarkroom(album: MemoryProject, preview: boolean, officialDemo = false) {
   const photos = new Map(album.rolls.flatMap((roll) => roll.photos.map((photo) => [photo.id, photo] as const)));
   const revealedPhotos = new Set<string>();
   const filmAudio = createFilmAudio();
@@ -646,7 +646,7 @@ export function mountDarkroom(album: MemoryProject, preview: boolean) {
     app.innerHTML = `<section class="darkroom darkroom--${scene}${viewer ? " darkroom--viewer" : ""}">
       <header class="scene-bar"><span>SCENE ${count(step)} <span class="scene-divider">—</span> ${sceneLabel}</span>
         <span>${preview ? "DRAFT · " : album.demo ? "DEMO · " : ""}${status}</span></header>
-      <div class="stage">${stage}</div>
+      <div class="stage">${stage}${scene === "envelope" && officialDemo && !preview ? `<div class="demo-opening-invitation"><a class="text-button" href="/login?next=/create" data-create-memory>${ui("createOwnMemory")}</a></div>` : ""}</div>
       ${scene === "line" && !preview ? `<aside class="memory-invitation"><p>${ui("createInvitation")}</p><a href="/login?next=/create" data-create-memory>${ui("createOwnMemory")}</a></aside>` : ""}
       <footer class="scene-foot">
         ${scene === "tray" && development === "ready"

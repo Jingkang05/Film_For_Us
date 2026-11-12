@@ -49,10 +49,10 @@ Preview variables must use a different Supabase reference, different encryption 
 To generate the encryption key locally, run:
 
 ```sh
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))" | pbcopy
 ```
 
-Store the output directly in your environment manager. Rotation invalidates encrypted application sessions; plan a sign-in-again window rather than trying to decrypt with a new key.
+On macOS, paste the clipboard directly into Vercel and your private password manager; the command does not display the key. Rotation invalidates encrypted application sessions; plan a sign-in-again window rather than trying to decrypt with a new key.
 
 ## Verified administrator association
 
@@ -89,3 +89,15 @@ No mainland network or mailbox delivery test has been performed. The browser cal
 R2 remains private. Source uploads are create-only, short-lived and signed for an exact content length. Shared upload rate limits, 50 lifetime albums/user, 500 active photos/album, 20 MiB sources and conservative 2 GiB lifetime storage accounting/user limit abuse. Failed uploads consume budget; deleting an album does not reset it. Objects unreferenced after failed processing are retained privately for a future reviewed garbage-collection job. No automatic deletion job touches legacy media.
 
 Public media uses indexed PostgreSQL membership/publication checks before immutable cached bytes or a 304. There are no R2 HEAD/LIST operations in normal requests or builds. Viewer media is proxied through Vercel; Vercel bandwidth and function duration still cost resources even with R2's egress pricing. Inspect Vercel transfer/invocations, R2 stored bytes/Class A/Class B operations and Supabase database size/connections/Auth email volume. Configure free dashboard usage notifications and spend caps where available on the selected plan; do not upgrade plans to enable a paid alert. Add a bounded operator cleanup of expired `ffu.rate_limits` and `ffu.app_sessions` after retention review.
+
+## User-managed configuration checkpoint
+
+The user will enter all values through Vercel Dashboard. Do not request secrets in chat or retrieve secret values to report them. Scope the nine variables in the Production table to **Production only**. Preserve all current Production R2 variables (`R2_ENDPOINT`, `R2_BUCKET`, `R2_REGION`, `R2_ENVIRONMENT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and any existing optional prefix/session settings). Keep `ALBUM_DATA_PROVIDER=legacy`; do not trigger a public Production redeploy just to check saved variables.
+
+After the user confirms completion, list names, presence and targets without decrypted values. Existing deployments do not acquire newly saved variables. Connectivity must be checked from a protected staged Production-target build without assigning domains; check configuration internally and report only pass/fail categories. A legacy-mode response does not prove PostgreSQL or Supabase connectivity. An actual application OTP login with a fresh eight-digit code must establish the encrypted server session before administrator association; delivery alone does not satisfy this gate. The user enters their code in the application, never in chat.
+
+The feature-branch Preview is currently an isolated browser-memory UI demonstration, with all server API access disabled. It is not an integration-test environment. Before hosted adversarial testing, explicitly replace that demonstration with an isolated integration Preview using a different Supabase project, database and private R2 bucket, then rerun the isolation checks. Do not put Production credentials into Preview or bypass the demonstration guard with a false environment label.
+
+## Demo-first opening
+
+The live root was inspected before implementation: `/` and `/demo` load independent public sample content from `/api/demo` (`id: demo`). Only these official entry routes show the subtle Create Your Own Memory link beneath the sealed envelope. Personal `/a/...` routes and draft previews never receive the opening CTA, even when their content has a demo flag. The button reuses account-aware navigation; the envelope, viewer sidebar and ending invitation remain functional. No private album/media was copied into the sample.

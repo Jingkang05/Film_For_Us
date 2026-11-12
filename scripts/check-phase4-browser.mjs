@@ -16,6 +16,18 @@ page.on("dialog",dialog=>dialog.accept());
 async function shot(name) { await page.evaluate(()=>document.fonts.ready); await page.screenshot({path:`${output}/${name}.png`,fullPage:true,animations:"disabled"}); }
 async function check(name,work) { await work();checks.push(name);console.log(`PASS ${name}`); }
 try {
+  await check("official Demo CTA scope and unauthenticated navigation",async()=>{
+    for (const path of ["/", "/demo"]) {
+      await page.goto(`${origin}${path}`);
+      await page.locator(".demo-opening-invitation a").waitFor();
+      const cta=await page.locator(".demo-opening-invitation").boundingBox();
+      const envelope=await page.locator(".envelope").boundingBox();
+      assert.ok(cta.y >= envelope.y + envelope.height);
+    }
+    await page.locator(".demo-opening-invitation a").click();await page.waitForURL("**/login?next=/create");
+    await page.goto(`${origin}/a/offline-fixture`);
+    assert.equal(await page.locator(".demo-opening-invitation").count(),0);
+  });
   await check("public Viewer and modal sidebar",async()=>{
     await page.goto(`${origin}/a/offline-fixture`);await page.locator(".viewer-menu-toggle").click();
     await page.locator(".viewer-menu[open]").waitFor();await shot("desktop-menu");
@@ -42,6 +54,10 @@ try {
     assert.equal((await (await page.request.get(`${origin}/api/editor`)).json()).albums.length,1);
   });
   const id=new URL(page.url()).pathname.split("/").pop();
+  await check("authenticated Demo CTA returns to Create",async()=>{
+    await page.goto(`${origin}/demo`);await page.locator(".demo-opening-invitation a").click();await page.waitForURL("**/create");
+    await page.goto(`${origin}/editor/${id}`);await page.locator('[name="title"]').waitFor();
+  });
   await check("Editor upload, save, private preview and publish",async()=>{
     await page.locator('[name="title"]').fill("Browser QA memory");
     await page.locator('[name="letter"]').fill("A sample memory for local end-to-end verification.");
@@ -82,6 +98,12 @@ try {
   });
   await check("mobile login, Create, Studio and Viewer fit 390px",async()=>{
     await page.setViewportSize({width:390,height:844});
+    await page.goto(`${origin}/demo`);await page.locator('.demo-opening-invitation a').waitFor();
+    await shot("mobile-demo-opening");
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await page.locator('[data-action="unseal"]').click();await page.locator('.letter-paper').waitFor();
+    assert.equal(await page.locator('.demo-opening-invitation').count(),0);
+
     for(const [route,name] of [[`/a/${id}`,"mobile-viewer"],["/login?next=/dashboard","mobile-login"]]) {
       await page.goto(origin+route);await page.locator(route.startsWith("/a/")?".viewer-menu-toggle":"[name=email]").waitFor();await shot(name);
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${name} overflow`);

@@ -28,7 +28,7 @@ async function start() {
   try {
     const album = toMemoryProject(await api<unknown>(source));
     const { mountDarkroom } = await import("./darkroom.js");
-    mountDarkroom(album, source === "/api/preview" || source.endsWith("/preview"));
+    mountDarkroom(album, source === "/api/preview" || source.endsWith("/preview"), source === "/api/demo");
     const { mountViewerMenu } = await import("./platform.js");
     mountViewerMenu();
     if (new URLSearchParams(location.search).has("sidebar")) document.querySelector<HTMLButtonElement>(".viewer-menu-toggle")?.click();

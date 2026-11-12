@@ -38,3 +38,21 @@ body:has(.viewer-menu-toggle) .scene-bar { padding-right: max(10.5rem, calc(env(
 .studio-empty { padding-block: 3rem; }
 .studio-empty p { margin-bottom: 1.5rem; color: #dbba91; }
 @media (max-width: 540px) { .template-choice { grid-template-columns: 1fr; gap: 1.25rem; } .template-choice img { max-height: 155px; } }
+
+/* Official sample entry only; envelope geometry and motion stay untouched. */
+.demo-opening-invitation {
+  justify-self: center;
+  margin: clamp(2rem, 5vh, 3.5rem) 1rem 1rem;
+  text-align: center;
+}
+.demo-opening-invitation a {
+  display: inline-block;
+  padding: .65rem 1rem;
+  color: var(--cream, #e8d4b4);
+  border-bottom: 1px solid currentColor;
+  opacity: .78;
+}
+.demo-opening-invitation a:hover, .demo-opening-invitation a:focus-visible { opacity: 1; }
+@media (max-width: 600px) {
+  .demo-opening-invitation { margin-top: 1.5rem; }
+}

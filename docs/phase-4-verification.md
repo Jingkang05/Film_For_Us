@@ -68,3 +68,11 @@ The automatic production-deployment authorization remains valid once those gates
 ## Resend / Supabase SMTP completion
 
 After the user approved the five additive Vercel DNS records, `auth.filmforus.space` verified in Resend. A domain-restricted sending-only SMTP key is stored in macOS Keychain. A real TLS SMTP test was delivered and two idempotent submissions produced one email. The user saved Supabase SMTP credentials. Both signup and login email templates now use `{{ .Token }}`, the hosted eight-digit OTP default was retained, and the expiry is 600 seconds. The application form, backend validation, bilingual copy and test fixtures were aligned to eight digits. A real Supabase-generated email was confirmed delivered with an eight-digit numeric code, no magic link and no unfilled variables; no code or credential was logged. The code was left unused, so sign-in verification, an active application session and administrator ownership transfer remain separate gates.
+
+## Demo-first follow-up
+
+The official `/` and `/demo` entries now show Create Your Own Memory beneath the sealed envelope, with account-aware navigation. The root was inspected live first and already used independent public sample data; personal shared albums and draft previews are explicitly excluded by the entry-route flag. No private content was copied. Envelope motion, sidebar and ending CTA are retained.
+
+Validation: all 73 tests passed; TypeScript/build passed; the expanded eight-group browser suite passed including both authenticated and unauthenticated Demo CTA navigation, personal-album CTA exclusion, mobile envelope opening, editor Save/Preview/Publish, logout and cinematic effects. The browser-memory UI demo passed desktop/mobile and network-isolation checks again (zero API/external requests; direct API 503). Screenshots include `mobile-demo-opening.png` under ignored `.data/phase4-qa/`.
+
+User-managed Vercel configuration instructions were supplied. No configuration-complete confirmation has yet been received. Real fresh-code application login, hosted integration isolation, administrator association, fresh backup/freeze/import and Production release remain pending. No SMTP delivery result or synthetic OTP test is treated as proof of real application login.
