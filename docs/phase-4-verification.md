@@ -11,7 +11,7 @@ Dedicated Film For Us Supabase project `lppysxtcvuphvynrvtyr` now has two additi
 
 All eight application tables have RLS enabled. Hosted inspection confirms `anon` has no SELECT grant on any application table. Authenticated users have no grant on application sessions, rate limits or imports. Owner policies protect profiles/albums and join photo/address/upload access to owned albums. An immutable-owner trigger prevents reassignment. Share-address bindings are permanent. The `ffu` schema must remain outside the Data API exposed schemas.
 
-Security advisor: no WARN/ERROR notices; three expected INFO notices for intentionally default-deny private tables without policies. Performance advisor: missing import-owner FK index fixed; only unused-index INFO remains because all eight tables are empty. No real user or album was inserted into the hosted project.
+Security advisor at schema verification: no WARN/ERROR notices; three expected INFO notices for intentionally default-deny private tables without policies. Performance advisor: missing import-owner FK index fixed; only unused-index INFO remained while all eight application tables were empty. The later SMTP delivery test requested an OTP for the approved mailbox through Supabase Auth, but did not verify it or create an application session, profile, album or ownership assignment.
 
 ## Automated evidence
 

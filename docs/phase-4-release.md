@@ -14,7 +14,9 @@ Implementation is on `codex/phase-4-supabase-multi-user`. Film For Us Supabase p
 6. Configure OTP send cooldown at least 60 seconds, verification rate limits, and email send limits appropriate to the SMTP provider. The app additionally enforces shared PostgreSQL limits: 30 auth attempts/IP/15 minutes, 6 sends/email/hour, one send/email/minute and 8 verify attempts/email/15 minutes. Supabase must still enforce its own limits because its Auth endpoint exists independently of the app.
 7. Keep token refresh reuse detection enabled. Use the normal one-hour JWT lifetime. The application cookie has a maximum 14-day life and every protected request checks the corresponding `auth.sessions` record plus the verified Auth user. No paid Supabase session-duration feature is required.
 
-## Configure custom SMTP — required manual account setup
+## Custom SMTP configuration and delivery checks
+
+Configured and verified on 12 November 2026: Resend sends from `Film For Us <no-reply@auth.filmforus.space>` using `smtp.resend.com`, port `465`, username `resend`. The user saved the domain-restricted sending key in Supabase. Gmail delivery passed for both a direct SMTP test and a real Supabase-generated eight-digit OTP. See `resend-dns-plan.md` for the applied DNS records. The following setup instructions support future maintenance; returning-user delivery and the remaining mailbox checks still require verification.
 
 In **Authentication → Email → SMTP**, enable custom SMTP and enter your provider's **host, port, username, password, From email and sender name**. Use sender name `Film For Us`. Obtain exact host/port and credentials from an existing SMTP provider account; do not guess them. Configure its domain-verification records (SPF/DKIM/DMARC) through the domain provider before sending. Use a dedicated verified address such as `no-reply@auth.filmforus.space` only after that subdomain is verified. Never commit SMTP passwords or paste them into chat.
 
