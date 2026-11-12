@@ -11,6 +11,18 @@
       "destination": "/api/[...route]"
     },
     {
+      "source": "/dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/create",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
       "source": "/demo",
       "destination": "/index.html"
     },
